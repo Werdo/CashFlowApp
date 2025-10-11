@@ -1,6 +1,7 @@
-/* ============================================
-   THEME TOGGLE COMPONENT
-   ============================================ */
+/**
+ * Theme Toggle Component
+ * Actualizado para v4.0 Design System
+ */
 
 .theme-toggle {
   display: flex;
@@ -9,64 +10,118 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 0.25rem;
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+.theme-toggle:hover {
+  background-color: var(--background-secondary);
+}
+
+.theme-toggle:active {
+  transform: scale(0.95);
 }
 
 .theme-toggle-track {
   position: relative;
-  width: 48px;
-  height: 24px;
-  background-color: var(--bg-tertiary);
+  width: 52px;
+  height: 28px;
+  background: var(--background-tertiary);
   border-radius: var(--radius-full);
-  border: 1px solid var(--border-color);
-  transition: background-color var(--transition-base);
+  border: 2px solid var(--border-color);
+  transition: all var(--transition-base);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .theme-toggle:hover .theme-toggle-track {
-  background-color: var(--bg-hover);
+  border-color: var(--primary-color);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1),
+              0 0 0 3px var(--primary-light);
 }
 
 .theme-toggle-thumb {
   position: absolute;
   top: 2px;
-  width: 18px;
-  height: 18px;
-  background-color: var(--bg-primary);
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform var(--transition-base) ease-in-out,
-              background-color var(--transition-base);
-  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base) var(--ease-bounce);
+  box-shadow: var(--elevation-2);
 }
 
 .theme-toggle-thumb.light {
   left: 2px;
-  transform: translateX(0);
+  transform: translateX(0) rotate(0deg);
+  background: linear-gradient(135deg, #FDB813 0%, #FFA000 100%);
 }
 
 .theme-toggle-thumb.dark {
   left: 2px;
-  transform: translateX(24px);
+  transform: translateX(24px) rotate(360deg);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
 }
 
 .theme-toggle-icon {
-  color: var(--text-primary);
+  color: white;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 }
 
-/* Add subtle color hints */
+/* Animación de brillo */
+@keyframes glow-sun {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px rgba(253, 184, 19, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(253, 184, 19, 0.8));
+  }
+}
+
+@keyframes glow-moon {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px rgba(108, 93, 211, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(108, 93, 211, 0.8));
+  }
+}
+
 .theme-toggle-thumb.light .theme-toggle-icon {
-  color: var(--accent-warning);
+  animation: glow-sun 3s ease-in-out infinite;
 }
 
 .theme-toggle-thumb.dark .theme-toggle-icon {
-  color: var(--accent-primary);
+  animation: glow-moon 3s ease-in-out infinite;
 }
 
 /* Reduce motion */
 @media (prefers-reduced-motion: reduce) {
   .theme-toggle-thumb {
-    transition: none;
+    transition: transform 0s, background-color var(--transition-fast);
   }
+
+  .theme-toggle-thumb .theme-toggle-icon {
+    animation: none;
+  }
+
+  .theme-toggle:active {
+    transform: none;
+  }
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .theme-toggle-track {
+  background: var(--gray-800);
+  border-color: var(--gray-700);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .theme-toggle:hover .theme-toggle-track {
+  border-color: var(--secondary-color);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3),
+              0 0 0 3px rgba(139, 125, 232, 0.2);
 }

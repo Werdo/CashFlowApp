@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { User, Mail, Phone, MapPin, Calendar, Edit2, Save, X, Camera } from 'lucide-react';
+import { useNotifications } from '../../contexts/NotificationContext';
+import Button from '../../components/Button/Button';
 import './Profile.css';
 
 const Profile = () => {
+  const { success: notifySuccess, error: notifyError } = useNotifications();
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [profileData, setProfileData] = useState({
     name: 'Pedro García',
     email: 'pedro.garcia@example.com',
@@ -11,7 +15,7 @@ const Profile = () => {
     address: 'Madrid, España',
     birthdate: '1990-05-15',
     joinedDate: '2025-01-01',
-    avatar: null,
+    avatar: localStorage.getItem('user-avatar') || null,
   });
 
   const [editedData, setEditedData] = useState({ ...profileData });
@@ -26,21 +30,60 @@ const Profile = () => {
     setEditedData({ ...profileData });
   };
 
-  const handleSave = () => {
-    // TODO: Call API to update profile
-    setProfileData({ ...editedData });
-    setIsEditing(false);
+  const handleSave = async () => {
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+      const response = await fetch(`${API_URL}/users/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(editedData)
+      });
+
+      if (response.ok) {
+        setProfileData({ ...editedData });
+        setIsEditing(false);
+        notifySuccess('Perfil actualizado correctamente');
+      } else {
+        throw new Error('Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      notifyError('Error al actualizar el perfil');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setEditedData({ ...editedData, avatar: reader.result });
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+      notifyError('Por favor selecciona una imagen válida');
+      return;
     }
+
+    if (file.size > 2 * 1024 * 1024) {
+      notifyError('La imagen debe ser menor a 2MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result;
+      setEditedData({ ...editedData, avatar: base64 });
+      localStorage.setItem('user-avatar', base64);
+      notifySuccess('Avatar actualizado');
+    };
+    reader.readAsDataURL(file);
   };
 
   const formatDate = (dateStr) => {
@@ -64,10 +107,13 @@ const Profile = () => {
           </div>
         </div>
         {!isEditing && (
-          <button className="btn btn-primary" onClick={handleEdit}>
-            <Edit2 size={16} />
+          <Button
+            variant="primary"
+            icon={<Edit2 size={16} />}
+            onClick={handleEdit}
+          >
             Editar Perfil
-          </button>
+          </Button>
         )}
       </div>
 
@@ -209,14 +255,22 @@ const Profile = () => {
         {/* Edit Actions */}
         {isEditing && (
           <div className="profile-actions">
-            <button className="btn btn-secondary" onClick={handleCancel}>
-              <X size={16} />
+            <Button
+              variant="secondary"
+              icon={<X size={16} />}
+              onClick={handleCancel}
+            >
               Cancelar
-            </button>
-            <button className="btn btn-primary" onClick={handleSave}>
-              <Save size={16} />
+            </Button>
+            <Button
+              variant="primary"
+              icon={<Save size={16} />}
+              onClick={handleSave}
+              loading={loading}
+              disabled={loading}
+            >
               Guardar Cambios
-            </button>
+            </Button>
           </div>
         )}
       </div>
