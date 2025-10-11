@@ -1,11 +1,11 @@
 {
-  "name": "CashFlow v3.0 - Gestión Financiera",
+  "name": "CashFlow v4.0 - Gestión Financiera Personal",
   "short_name": "CashFlow",
-  "description": "Aplicación de gestión de flujo de caja con IA integrada",
+  "description": "Aplicación completa para gestión de ingresos, gastos y análisis financiero con IA",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#3b82f6",
+  "theme_color": "#6c5dd3",
   "orientation": "portrait-primary",
   "scope": "/",
   "icons": [
@@ -65,10 +65,10 @@
   ],
   "shortcuts": [
     {
-      "name": "Nueva Transacción",
-      "short_name": "Nueva",
-      "description": "Añadir nueva transacción",
-      "url": "/transactions/new",
+      "name": "Dashboard",
+      "short_name": "Inicio",
+      "description": "Ver dashboard principal",
+      "url": "/dashboard",
       "icons": [
         {
           "src": "/icons/icon-96x96.png",
@@ -77,10 +77,22 @@
       ]
     },
     {
-      "name": "Dashboard",
-      "short_name": "Inicio",
-      "description": "Ver dashboard principal",
-      "url": "/",
+      "name": "Calendario",
+      "short_name": "Calendario",
+      "description": "Vista de calendario",
+      "url": "/calendar",
+      "icons": [
+        {
+          "src": "/icons/icon-96x96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Transacciones",
+      "short_name": "Transacciones",
+      "description": "Listar transacciones",
+      "url": "/transactions",
       "icons": [
         {
           "src": "/icons/icon-96x96.png",

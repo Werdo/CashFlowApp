@@ -1,7 +1,7 @@
 {
-  "name": "cashflow-frontend-v3",
-  "version": "3.0.0",
-  "description": "CashFlow v3.0 - Mobile-First PWA with AI Integration",
+  "name": "cashflow-frontend-v4",
+  "version": "4.0.0",
+  "description": "CashFlow v4.0 - Modern Financial Management PWA with AI, Dark Mode & Modular Architecture",
   "private": true,
   "dependencies": {
     "@hookform/resolvers": "^3.3.3",
