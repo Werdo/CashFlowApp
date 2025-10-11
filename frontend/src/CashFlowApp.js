@@ -9,6 +9,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, L
 import Layout from './components/Layout/Layout';
 import FAB from './components/FAB/FAB';
 import { useNotifications } from './contexts/NotificationContext';
+import SaveIndicator from './components/SaveIndicator';
 
 const API_URL = 'http://localhost:5000/api';
 
@@ -39,6 +40,9 @@ const CashFlowApp = () => {
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [showDailyCash, setShowDailyCash] = useState(false);
   const [showGroupedExpenses, setShowGroupedExpenses] = useState(false);
+
+  // Save status: 'idle', 'saving', 'saved', 'error'
+  const [saveStatus, setSaveStatus] = useState('idle');
 
   const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
@@ -123,9 +127,11 @@ const CashFlowApp = () => {
   useEffect(() => {
     if (!isAuthenticated || !cashflowData) return;
 
+    setSaveStatus('saving');
+
     const timeoutId = setTimeout(() => {
       saveCashflowDataSilent();
-    }, 2000); // Auto-save after 2 seconds of inactivity
+    }, 1500); // Auto-save after 1.5 seconds of inactivity
 
     return () => clearTimeout(timeoutId);
   }, [cashflowData, isAuthenticated]);
@@ -159,9 +165,17 @@ const CashFlowApp = () => {
           months: cashflowData.months
         })
       });
+      setSaveStatus('saved');
       console.log('✅ Auto-guardado exitoso');
+
+      // Hide indicator after 2 seconds
+      setTimeout(() => setSaveStatus('idle'), 2000);
     } catch (err) {
       console.error('❌ Error en auto-guardado:', err);
+      setSaveStatus('error');
+
+      // Hide error after 3 seconds
+      setTimeout(() => setSaveStatus('idle'), 3000);
     }
   };
 
@@ -750,6 +764,10 @@ const CashFlowApp = () => {
       const monthIdx = today.getMonth();
       const day = today.getDate();
 
+      // Change to calendar view first
+      setSelectedMonth(monthIdx);
+      setCurrentView('calendar');
+
       // Find the day and add income
       const month = cashflowData.months[monthIdx];
       for (let wIdx = 0; wIdx < month.weeks.length; wIdx++) {
@@ -757,7 +775,10 @@ const CashFlowApp = () => {
         for (let dIdx = 0; dIdx < week.days.length; dIdx++) {
           const dayObj = week.days[dIdx];
           if (dayObj.isValid && dayObj.dayNumber === day) {
-            addItem(monthIdx, wIdx, dIdx, 'ingresos', 'variables');
+            // Add a slight delay to ensure view has changed
+            setTimeout(() => {
+              addItem(monthIdx, wIdx, dIdx, 'ingresos', 'variables');
+            }, 100);
             return;
           }
         }
@@ -768,13 +789,20 @@ const CashFlowApp = () => {
       const monthIdx = today.getMonth();
       const day = today.getDate();
 
+      // Change to calendar view first
+      setSelectedMonth(monthIdx);
+      setCurrentView('calendar');
+
       const month = cashflowData.months[monthIdx];
       for (let wIdx = 0; wIdx < month.weeks.length; wIdx++) {
         const week = month.weeks[wIdx];
         for (let dIdx = 0; dIdx < week.days.length; dIdx++) {
           const dayObj = week.days[dIdx];
           if (dayObj.isValid && dayObj.dayNumber === day) {
-            addItem(monthIdx, wIdx, dIdx, 'gastos', 'variables');
+            // Add a slight delay to ensure view has changed
+            setTimeout(() => {
+              addItem(monthIdx, wIdx, dIdx, 'gastos', 'variables');
+            }, 100);
             return;
           }
         }
@@ -1069,6 +1097,7 @@ const CashFlowApp = () => {
   if (currentView === 'dashboard') {
     return (
       <Layout user={user}>
+        <SaveIndicator status={saveStatus} />
         {renderTooltip()}
         <div className="max-w-7xl mx-auto p-6">
           <div className="flex justify-between items-center mb-8">
@@ -1088,14 +1117,6 @@ const CashFlowApp = () => {
                     {getTodayNotifications().length}
                   </span>
                 )}
-              </button>
-              <button
-                onClick={saveCashflowData}
-                disabled={loading}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 shadow-lg disabled:bg-gray-400"
-              >
-                <Save size={20} />
-                {loading ? 'Guardando...' : 'Guardar'}
               </button>
               <button
                 onClick={exportData}
@@ -1338,6 +1359,7 @@ const CashFlowApp = () => {
   // CALENDAR VIEW
   return (
     <Layout user={user}>
+      <SaveIndicator status={saveStatus} />
       {renderTooltip()}
       <div className="max-w-7xl mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
@@ -1360,14 +1382,6 @@ const CashFlowApp = () => {
             >
               <TrendingUp size={20} />
               {showDailyCash ? 'Ocultar' : 'Ver'} Caja Diaria
-            </button>
-            <button
-              onClick={saveCashflowData}
-              disabled={loading}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 disabled:bg-gray-400"
-            >
-              <Save size={20} />
-              {loading ? 'Guardando...' : 'Guardar'}
             </button>
             <button
               onClick={exportData}
