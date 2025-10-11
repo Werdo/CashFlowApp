@@ -1,34 +1,45 @@
+/**
+ * Sidebar Component Styles
+ * Actualizado para v4.0 Design System
+ */
+
 /* ============================================
-   SIDEBAR COMPONENT STYLES
+   BASE SIDEBAR
    ============================================ */
 
-/* ==================== BASE SIDEBAR ==================== */
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
   height: 100vh;
-  background-color: var(--sidebar-bg);
-  border-right: 1px solid var(--sidebar-border);
+  background-color: var(--card-bg);
+  border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   z-index: var(--z-fixed);
-  transition: width var(--transition-base) ease-in-out,
-              transform var(--transition-base) ease-in-out;
+  box-shadow: var(--elevation-1);
+  transition: width var(--transition-base),
+              transform var(--transition-base);
 }
 
-/* ==================== DESKTOP SIDEBAR ==================== */
+/* ============================================
+   DESKTOP SIDEBAR
+   ============================================ */
+
 .sidebar-desktop {
-  width: var(--sidebar-width-expanded);
+  width: var(--sidebar-width);
 }
 
 .sidebar-desktop.sidebar-collapsed {
-  width: var(--sidebar-width-collapsed);
+  width: var(--sidebar-collapsed-width);
 }
 
-/* ==================== MOBILE SIDEBAR ==================== */
+/* ============================================
+   MOBILE SIDEBAR
+   ============================================ */
+
 .sidebar-mobile {
-  width: var(--sidebar-width-expanded);
+  width: var(--sidebar-width);
   transform: translateX(-100%);
   box-shadow: var(--shadow-xl);
 }
@@ -37,50 +48,56 @@
   transform: translateX(0);
 }
 
-/* ==================== BACKDROP (Mobile Only) ==================== */
+/* ============================================
+   BACKDROP (Mobile Only)
+   ============================================ */
+
 .sidebar-backdrop {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--overlay-bg);
   z-index: calc(var(--z-fixed) - 1);
-  animation: fadeIn var(--transition-base) ease-in-out;
+  cursor: pointer;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+/* ============================================
+   HEADER
+   ============================================ */
 
-/* ==================== HEADER ==================== */
 .sidebar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem;
+  padding: var(--space-4);
   height: var(--header-height);
-  border-bottom: 1px solid var(--sidebar-border);
+  border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
 }
 
 .sidebar-logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
   flex: 1;
+  overflow: hidden;
 }
 
 .sidebar-logo-text {
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
   color: var(--text-primary);
   white-space: nowrap;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .sidebar-logo-icon {
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -96,12 +113,15 @@
   width: 36px;
   height: 36px;
   object-fit: contain;
+  border-radius: var(--radius-md);
 }
 
-/* Toggle Button (Desktop) */
-.sidebar-toggle-btn {
-  width: 32px;
-  height: 32px;
+/* ============================================
+   TOGGLE & CLOSE BUTTONS
+   ============================================ */
+
+.sidebar-toggle-btn,
+.sidebar-close-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -110,13 +130,30 @@
   border-radius: var(--radius-md);
   cursor: pointer;
   color: var(--text-secondary);
-  transition: background-color var(--transition-fast),
-              color var(--transition-fast);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
 }
 
-.sidebar-toggle-btn:hover {
-  background-color: var(--sidebar-item-hover);
+.sidebar-toggle-btn {
+  width: 32px;
+  height: 32px;
+}
+
+.sidebar-close-btn {
+  width: 40px;
+  height: 40px;
+}
+
+.sidebar-toggle-btn:hover,
+.sidebar-close-btn:hover {
+  background-color: var(--background-secondary);
   color: var(--text-primary);
+  transform: scale(1.05);
+}
+
+.sidebar-toggle-btn:active,
+.sidebar-close-btn:active {
+  transform: scale(0.95);
 }
 
 .sidebar-toggle-icon {
@@ -127,33 +164,15 @@
   transform: rotate(180deg);
 }
 
-/* Close Button (Mobile) */
-.sidebar-close-btn {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: transparent;
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  color: var(--text-secondary);
-  transition: background-color var(--transition-fast),
-              color var(--transition-fast);
-}
+/* ============================================
+   NAVIGATION
+   ============================================ */
 
-.sidebar-close-btn:hover {
-  background-color: var(--sidebar-item-hover);
-  color: var(--text-primary);
-}
-
-/* ==================== NAVIGATION ==================== */
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 1rem 0;
+  padding: var(--space-4) 0;
 }
 
 /* Custom scrollbar */
@@ -166,36 +185,47 @@
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb {
-  background: var(--border-color);
+  background: var(--gray-300);
   border-radius: var(--radius-full);
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb:hover {
-  background: var(--border-dark);
+  background: var(--gray-400);
 }
 
-/* ==================== SECTIONS ==================== */
+/* ============================================
+   SECTIONS
+   ============================================ */
+
 .sidebar-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
+}
+
+.sidebar-section:last-child {
+  margin-bottom: 0;
 }
 
 .sidebar-section-title {
-  padding: 0.5rem 1rem;
-  font-size: 0.75rem;
-  font-weight: 600;
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-tertiary);
   white-space: nowrap;
+  user-select: none;
 }
 
 .sidebar-divider {
   height: 1px;
-  margin: 0.5rem 1rem;
-  background-color: var(--border-light);
+  margin: var(--space-2) var(--space-4);
+  background-color: var(--border-color);
 }
 
-/* ==================== MENU ==================== */
+/* ============================================
+   MENU
+   ============================================ */
+
 .sidebar-menu {
   list-style: none;
   margin: 0;
@@ -210,36 +240,41 @@
 .sidebar-menu-link {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: var(--space-3) var(--space-4);
   background-color: transparent;
   border: none;
   border-left: 3px solid transparent;
   cursor: pointer;
   color: var(--text-secondary);
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   text-align: left;
   position: relative;
-  transition: background-color var(--transition-fast),
-              color var(--transition-fast),
-              border-color var(--transition-fast);
+  transition: all var(--transition-fast);
+  user-select: none;
 }
 
 .sidebar-menu-link:hover {
-  background-color: var(--sidebar-item-hover);
+  background-color: var(--background-secondary);
   color: var(--text-primary);
 }
 
 .sidebar-menu-link.active {
-  background-color: var(--sidebar-item-active);
-  color: var(--accent-primary);
-  border-left-color: var(--accent-primary);
+  background: var(--primary-light);
+  color: var(--primary-color);
+  border-left-color: var(--primary-color);
+  font-weight: var(--font-semibold);
+}
+
+.sidebar-menu-link.active .sidebar-menu-icon {
+  color: var(--primary-color);
 }
 
 .sidebar-menu-icon {
   flex-shrink: 0;
+  transition: color var(--transition-fast);
 }
 
 .sidebar-menu-label {
@@ -250,17 +285,22 @@
 
 .sidebar-menu-indicator {
   position: absolute;
-  right: 1rem;
+  right: var(--space-4);
   width: 6px;
   height: 6px;
   border-radius: var(--radius-full);
-  background-color: var(--accent-primary);
+  background-color: var(--primary-color);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Collapsed state - center icons */
+/* ============================================
+   COLLAPSED STATE
+   ============================================ */
+
 .sidebar-collapsed .sidebar-menu-link {
   justify-content: center;
-  padding: 0.75rem;
+  padding: var(--space-3);
+  border-left: none;
 }
 
 .sidebar-collapsed .sidebar-menu-label {
@@ -271,27 +311,93 @@
   display: none;
 }
 
-/* ==================== FOOTER ==================== */
+.sidebar-collapsed .sidebar-section-title {
+  display: none;
+}
+
+/* Tooltip for collapsed items */
+.sidebar-collapsed .sidebar-menu-link {
+  position: relative;
+}
+
+.sidebar-collapsed .sidebar-menu-link:hover::after {
+  content: attr(title);
+  position: absolute;
+  left: calc(100% + var(--space-2));
+  top: 50%;
+  transform: translateY(-50%);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--gray-900);
+  color: white;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  white-space: nowrap;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-tooltip);
+  animation: slideInRight 0.2s ease-out;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+
 .sidebar-footer {
-  padding: 1rem;
-  border-top: 1px solid var(--sidebar-border);
+  padding: var(--space-4);
+  border-top: 1px solid var(--border-color);
   flex-shrink: 0;
 }
 
 .sidebar-version {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
 }
 
 .sidebar-collapsed .sidebar-version span {
   display: none;
 }
 
-/* ==================== RESPONSIVE ==================== */
+.sidebar-collapsed .sidebar-version::before {
+  content: 'v4';
+  color: var(--text-tertiary);
+}
 
-/* Tablet Portrait (641-768px) */
-@media (min-width: 641px) and (max-width: 768px) {
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+/* Tablet Portrait (sm-md) */
+@media (min-width: 640px) and (max-width: 1024px) {
   .sidebar-desktop {
-    width: var(--sidebar-width-collapsed);
+    width: var(--sidebar-collapsed-width);
   }
 
   .sidebar-desktop .sidebar-menu-label,
@@ -302,12 +408,16 @@
   .sidebar-desktop .sidebar-menu-link {
     justify-content: center;
   }
+
+  .sidebar-desktop .sidebar-version span {
+    display: none;
+  }
 }
 
-/* Small phones (< 375px) */
-@media (max-width: 374px) {
+/* Small phones */
+@media (max-width: 480px) {
   .sidebar-mobile {
-    width: 100%;
+    width: 85%;
   }
 }
 
@@ -315,12 +425,27 @@
 @media (prefers-reduced-motion: reduce) {
   .sidebar,
   .sidebar-toggle-icon,
-  .sidebar-menu-link {
+  .sidebar-menu-link,
+  .sidebar-menu-indicator,
+  .sidebar-toggle-btn,
+  .sidebar-close-btn {
     transition: none;
+    animation: none;
   }
 }
 
-/* ==================== UTILITY ==================== */
-.text-xs {
-  font-size: 0.75rem;
+/* ============================================
+   DARK MODE ADJUSTMENTS
+   ============================================ */
+
+[data-theme="dark"] .sidebar {
+  box-shadow: var(--elevation-2);
+}
+
+[data-theme="dark"] .sidebar-menu-link.active {
+  background: rgba(108, 93, 211, 0.15);
+}
+
+[data-theme="dark"] .sidebar-collapsed .sidebar-menu-link:hover::after {
+  background-color: var(--gray-800);
 }
