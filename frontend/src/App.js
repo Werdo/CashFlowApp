@@ -23,6 +23,7 @@ import Settings from './pages/Settings/Settings';
 import Profile from './pages/Profile/Profile';
 import Help from './pages/Help/Help';
 import AIAnalysis from './pages/AIAnalysis/AIAnalysis';
+import AISettings from './pages/AISettings/AISettings';
 
 function App() {
   return (
@@ -59,6 +60,7 @@ function AppContent() {
       <Route path="/profile" element={<Layout><Profile /></Layout>} />
       <Route path="/help" element={<Layout><Help /></Layout>} />
       <Route path="/ai-analysis" element={<Layout><AIAnalysis /></Layout>} />
+      <Route path="/ai-settings" element={<Layout><AISettings /></Layout>} />
     </Routes>
   );
 }

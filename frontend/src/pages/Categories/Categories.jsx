@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tag, Folder, Plus, Edit2, Trash2, X, Check, Hash } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNotifications } from '../../contexts/NotificationContext';
+import categoryService from '../../services/categoryService';
 import './Categories.css';
 
 const Categories = () => {
+  const { success: notifySuccess, error: notifyError } = useNotifications();
   const [activeTab, setActiveTab] = useState('hashtags'); // 'hashtags' or 'groups'
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     type: 'hashtag',
@@ -19,20 +23,33 @@ const Categories = () => {
     },
   });
 
-  // Mock data
-  const [hashtags, setHashtags] = useState([
-    { id: 1, name: 'salario', color: '#10b981', parentGroup: { id: 1, name: 'Ingresos Fijos' }, recurrence: { enabled: true, type: 'monthly', amount: 3500 } },
-    { id: 2, name: 'freelance', color: '#3b82f6', parentGroup: { id: 2, name: 'Ingresos Variables' }, recurrence: { enabled: false } },
-    { id: 3, name: 'alquiler', color: '#ef4444', parentGroup: { id: 3, name: 'Gastos Fijos' }, recurrence: { enabled: true, type: 'monthly', amount: 900 } },
-    { id: 4, name: 'supermercado', color: '#f59e0b', parentGroup: { id: 4, name: 'Gastos Variables' }, recurrence: { enabled: false } },
-  ]);
+  const [hashtags, setHashtags] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const token = localStorage.getItem('token');
 
-  const [groups, setGroups] = useState([
-    { id: 1, name: 'Ingresos Fijos', color: '#10b981', count: 1 },
-    { id: 2, name: 'Ingresos Variables', color: '#3b82f6', count: 1 },
-    { id: 3, name: 'Gastos Fijos', color: '#ef4444', count: 1 },
-    { id: 4, name: 'Gastos Variables', color: '#f59e0b', count: 1 },
-  ]);
+  // Load categories on mount
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      setLoading(true);
+      const categories = await categoryService.getCategories(token);
+
+      // Separate hashtags and groups
+      const hashtagsList = categories.filter(c => c.type === 'hashtag');
+      const groupsList = categories.filter(c => c.type === 'group');
+
+      setHashtags(hashtagsList);
+      setGroups(groupsList);
+    } catch (error) {
+      notifyError('Error al cargar categorías');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const recurrenceTypes = [
     { value: 'daily', label: 'Diaria' },
@@ -67,17 +84,45 @@ const Categories = () => {
     setEditingItem(null);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Call API
-    console.log('Save:', formData);
-    handleCloseModal();
+    setLoading(true);
+
+    try {
+      if (editingItem) {
+        // Update existing
+        await categoryService.updateCategory(token, editingItem._id, formData);
+        notifySuccess('Categoría actualizada correctamente');
+      } else {
+        // Create new
+        await categoryService.createCategory(token, formData);
+        notifySuccess('Categoría creada correctamente');
+      }
+
+      // Reload categories
+      await loadCategories();
+      handleCloseModal();
+    } catch (error) {
+      notifyError('Error al guardar categoría');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = (id, type) => {
+  const handleDelete = async (id, type) => {
     if (window.confirm('¿Eliminar este elemento?')) {
-      // TODO: Call API
-      console.log('Delete:', id, type);
+      setLoading(true);
+      try {
+        await categoryService.deleteCategory(token, id);
+        notifySuccess('Categoría eliminada correctamente');
+        await loadCategories();
+      } catch (error) {
+        notifyError('Error al eliminar categoría');
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, Bell, Search, User, ChevronDown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useSidebar } from '../../contexts/SidebarContext';
 import ThemeToggle from '../ThemeToggle/ThemeToggle';
 import './Header.css';
 
 const Header = ({ user }) => {
+  const navigate = useNavigate();
   const { isMobile, openSidebar, toggleSidebar } = useSidebar();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [appTitle, setAppTitle] = useState(() => localStorage.getItem('app-title') || 'CashFlow');
@@ -202,17 +204,35 @@ const Header = ({ user }) => {
                   <div className="header-user-menu-divider" />
                   <ul className="header-user-menu-list">
                     <li>
-                      <button className="header-user-menu-item">
+                      <button
+                        className="header-user-menu-item"
+                        onClick={() => {
+                          navigate('/profile');
+                          setShowUserMenu(false);
+                        }}
+                      >
                         Mi Perfil
                       </button>
                     </li>
                     <li>
-                      <button className="header-user-menu-item">
+                      <button
+                        className="header-user-menu-item"
+                        onClick={() => {
+                          navigate('/settings');
+                          setShowUserMenu(false);
+                        }}
+                      >
                         Configuración
                       </button>
                     </li>
                     <li>
-                      <button className="header-user-menu-item">
+                      <button
+                        className="header-user-menu-item"
+                        onClick={() => {
+                          navigate('/help');
+                          setShowUserMenu(false);
+                        }}
+                      >
                         Ayuda
                       </button>
                     </li>
@@ -220,7 +240,14 @@ const Header = ({ user }) => {
                   <div className="header-user-menu-divider" />
                   <ul className="header-user-menu-list">
                     <li>
-                      <button className="header-user-menu-item header-user-menu-item-danger">
+                      <button
+                        className="header-user-menu-item header-user-menu-item-danger"
+                        onClick={() => {
+                          localStorage.removeItem('token');
+                          navigate('/login');
+                          setShowUserMenu(false);
+                        }}
+                      >
                         Cerrar Sesión
                       </button>
                     </li>

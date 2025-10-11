@@ -65,19 +65,85 @@ const Settings = () => {
     resolver: zodResolver(passwordSchema),
   });
 
-  const onSubmitProfile = (data) => {
-    console.log('Profile data:', data);
-    // TODO: API call to update profile
+  const onSubmitProfile = async (data) => {
+    try {
+      const token = localStorage.getItem('token');
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+      const response = await fetch(`${API_URL}/users/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        success('Perfil actualizado correctamente');
+      } else {
+        throw new Error('Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      notifyError('Error al actualizar el perfil');
+    }
   };
 
-  const onSubmitPassword = (data) => {
-    console.log('Password data:', data);
-    // TODO: API call to update password
-    resetPassword();
+  const onSubmitPassword = async (data) => {
+    try {
+      const token = localStorage.getItem('token');
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+      const response = await fetch(`${API_URL}/users/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          currentPassword: data.currentPassword,
+          newPassword: data.newPassword
+        })
+      });
+
+      if (response.ok) {
+        success('Contraseña actualizada correctamente');
+        resetPassword();
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update password');
+      }
+    } catch (error) {
+      console.error('Error updating password:', error);
+      notifyError(error.message || 'Error al actualizar la contraseña');
+    }
   };
 
-  const handleNotificationChange = (key) => {
-    setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
+  const handleNotificationChange = async (key) => {
+    const newNotifications = { ...notifications, [key]: !notifications[key] };
+    setNotifications(newNotifications);
+
+    try {
+      const token = localStorage.getItem('token');
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+      await fetch(`${API_URL}/users/notifications`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newNotifications)
+      });
+
+      success('Preferencias de notificación actualizadas');
+    } catch (error) {
+      console.error('Error updating notifications:', error);
+      notifyError('Error al actualizar las notificaciones');
+      // Revert on error
+      setNotifications(notifications);
+    }
   };
 
   const handleLogoUpload = (e) => {
@@ -170,6 +236,36 @@ const Settings = () => {
     };
   });
   const [testingConnection, setTestingConnection] = useState(false);
+  const [preferences, setPreferences] = useState({
+    language: 'es',
+    currency: 'EUR',
+    timezone: 'Europe/Madrid'
+  });
+
+  const handleSavePreferences = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+      const response = await fetch(`${API_URL}/users/preferences`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(preferences)
+      });
+
+      if (response.ok) {
+        success('Preferencias guardadas correctamente');
+      } else {
+        throw new Error('Failed to update preferences');
+      }
+    } catch (error) {
+      console.error('Error updating preferences:', error);
+      notifyError('Error al guardar las preferencias');
+    }
+  };
 
   const tabs = [
     { id: 'profile', label: 'Perfil', icon: User },
@@ -636,7 +732,11 @@ const Settings = () => {
               <div className="settings-form">
                 <div className="form-group">
                   <label className="form-label">Idioma</label>
-                  <select className="form-input">
+                  <select
+                    className="form-input"
+                    value={preferences.language}
+                    onChange={(e) => setPreferences({ ...preferences, language: e.target.value })}
+                  >
                     <option value="es">Español</option>
                     <option value="en">English</option>
                   </select>
@@ -644,7 +744,11 @@ const Settings = () => {
 
                 <div className="form-group">
                   <label className="form-label">Moneda</label>
-                  <select className="form-input">
+                  <select
+                    className="form-input"
+                    value={preferences.currency}
+                    onChange={(e) => setPreferences({ ...preferences, currency: e.target.value })}
+                  >
                     <option value="EUR">EUR (€)</option>
                     <option value="USD">USD ($)</option>
                     <option value="GBP">GBP (£)</option>
@@ -653,14 +757,22 @@ const Settings = () => {
 
                 <div className="form-group">
                   <label className="form-label">Zona Horaria</label>
-                  <select className="form-input">
+                  <select
+                    className="form-input"
+                    value={preferences.timezone}
+                    onChange={(e) => setPreferences({ ...preferences, timezone: e.target.value })}
+                  >
                     <option value="Europe/Madrid">Europe/Madrid (GMT+1)</option>
                     <option value="America/New_York">America/New_York (GMT-5)</option>
                     <option value="Asia/Tokyo">Asia/Tokyo (GMT+9)</option>
                   </select>
                 </div>
 
-                <button type="button" className="btn btn-primary">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleSavePreferences}
+                >
                   <Save size={18} />
                   Guardar Preferencias
                 </button>

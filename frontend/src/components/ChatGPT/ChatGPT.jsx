@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader, X, Minimize2, Maximize2 } from 'lucide-react';
+import { Send, Bot, User, Loader, X, Minimize2, Maximize2, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './ChatGPT.css';
 
 const ChatGPT = ({ onClose, initialContext }) => {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -112,6 +114,14 @@ const ChatGPT = ({ onClose, initialContext }) => {
           <span className="chatgpt-title">Asistente Financiero</span>
         </div>
         <div className="chatgpt-header-right">
+          <button
+            className="chatgpt-header-btn"
+            onClick={() => navigate('/ai-settings')}
+            aria-label="Settings"
+            title="Configuración de IA"
+          >
+            <Settings size={18} />
+          </button>
           <button
             className="chatgpt-header-btn"
             onClick={() => setIsMinimized(!isMinimized)}
