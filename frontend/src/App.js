@@ -5,11 +5,12 @@ import { SidebarProvider } from './contexts/SidebarContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import Layout from './components/Layout/Layout';
 import NotificationContainer from './components/Notifications/NotificationContainer';
+import PrivateRoute from './components/PrivateRoute/PrivateRoute';
 
-// Import legacy CashFlow component (we'll keep it for now)
+// Import legacy CashFlow component (with auth built-in)
 import CashFlowApp from './CashFlowApp';
 
-// Import new pages
+// Import pages
 import Dashboard from './pages/Dashboard/Dashboard';
 import Calendar from './pages/Calendar/Calendar';
 import Analytics from './pages/Analytics/Analytics';
@@ -43,24 +44,125 @@ function App() {
 function AppContent() {
   return (
     <Routes>
-      {/* Main route - CashFlow App original (sin Layout porque ya lo tiene) */}
+      {/* Main route - CashFlow App (has auth and Layout built-in) */}
       <Route path="/" element={<CashFlowApp />} />
 
-      {/* New pages with Layout */}
-      <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-      <Route path="/calendar" element={<Layout><Calendar /></Layout>} />
-      <Route path="/analytics" element={<Layout><Analytics /></Layout>} />
-      <Route path="/transactions" element={<Layout><Transactions /></Layout>} />
-      <Route path="/categories" element={<Layout><Categories /></Layout>} />
-      <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
-      <Route path="/reports" element={<Layout><Reports /></Layout>} />
-      <Route path="/documents" element={<Layout><Documents /></Layout>} />
-      <Route path="/export" element={<Layout><Export /></Layout>} />
-      <Route path="/settings" element={<Layout><Settings /></Layout>} />
-      <Route path="/profile" element={<Layout><Profile /></Layout>} />
-      <Route path="/help" element={<Layout><Help /></Layout>} />
-      <Route path="/ai-analysis" element={<Layout><AIAnalysis /></Layout>} />
-      <Route path="/ai-settings" element={<Layout><AISettings /></Layout>} />
+      {/* Protected routes with Layout */}
+      <Route
+        path="/dashboard"
+        element={
+          <PrivateRoute>
+            <Layout><Dashboard /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/calendar"
+        element={
+          <PrivateRoute>
+            <Layout><Calendar /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/analytics"
+        element={
+          <PrivateRoute>
+            <Layout><Analytics /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/transactions"
+        element={
+          <PrivateRoute>
+            <Layout><Transactions /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/categories"
+        element={
+          <PrivateRoute>
+            <Layout><Categories /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/alerts"
+        element={
+          <PrivateRoute>
+            <Layout><Alerts /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/reports"
+        element={
+          <PrivateRoute>
+            <Layout><Reports /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/documents"
+        element={
+          <PrivateRoute>
+            <Layout><Documents /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/export"
+        element={
+          <PrivateRoute>
+            <Layout><Export /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <PrivateRoute>
+            <Layout><Settings /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <PrivateRoute>
+            <Layout><Profile /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/help"
+        element={
+          <PrivateRoute>
+            <Layout><Help /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/ai-analysis"
+        element={
+          <PrivateRoute>
+            <Layout><AIAnalysis /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/ai-settings"
+        element={
+          <PrivateRoute>
+            <Layout><AISettings /></Layout>
+          </PrivateRoute>
+        }
+      />
+
+      {/* Catch all - redirect to main */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
