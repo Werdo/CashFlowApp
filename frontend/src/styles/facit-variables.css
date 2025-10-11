@@ -1,0 +1,307 @@
+/* ============================================
+   FACIT DESIGN SYSTEM - CSS VARIABLES
+   Adaptado de Facit Template para CashFlow v3.0
+   ============================================ */
+
+:root {
+  /* ==================== COLORS ==================== */
+
+  /* Primary Palette - Facit Purple Theme */
+  --facit-primary: #6c5dd3;
+  --facit-primary-rgb: 108, 93, 211;
+  --facit-secondary: #ffa2c0;
+  --facit-secondary-rgb: 255, 162, 192;
+  --facit-success: #46bcaa;
+  --facit-success-rgb: 70, 188, 170;
+  --facit-info: #4d69fa;
+  --facit-info-rgb: 77, 105, 250;
+  --facit-warning: #ffcf52;
+  --facit-warning-rgb: 255, 207, 82;
+  --facit-danger: #f35421;
+  --facit-danger-rgb: 243, 84, 33;
+  --facit-light: #e7eef8;
+  --facit-light-rgb: 231, 238, 248;
+  --facit-dark: #1f2128;
+  --facit-dark-rgb: 31, 33, 40;
+
+  /* Brand Colors */
+  --facit-brand: #ffcd02;
+  --facit-brand-two: #323232;
+
+  /* Grays */
+  --facit-gray-100: #f8f9fa;
+  --facit-gray-200: #e9ecef;
+  --facit-gray-300: #dee2e6;
+  --facit-gray-400: #ced4da;
+  --facit-gray-500: #adb5bd;
+  --facit-gray-600: #6c757d;
+  --facit-gray-700: #495057;
+  --facit-gray-800: #343a40;
+  --facit-gray-900: #212529;
+
+  --facit-white: #ffffff;
+  --facit-black: #000000;
+
+  /* ==================== TYPOGRAPHY ==================== */
+
+  --facit-font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --facit-font-size-root: 0.8125rem; /* 13px */
+  --facit-font-size-base: 1rem;
+  --facit-font-size-sm: 0.875rem;
+  --facit-font-size-lg: 1.25rem;
+  --facit-font-size-xl: 1.5rem;
+  --facit-font-size-2xl: 2rem;
+
+  --facit-font-weight-light: 300;
+  --facit-font-weight-normal: 400;
+  --facit-font-weight-medium: 500;
+  --facit-font-weight-semibold: 600;
+  --facit-font-weight-bold: 700;
+
+  --facit-line-height-base: 1.5;
+  --facit-line-height-sm: 1.25;
+  --facit-line-height-lg: 2;
+
+  /* ==================== SPACING ==================== */
+
+  --facit-spacer: 1rem;
+  --facit-spacer-0: 0;
+  --facit-spacer-1: 0.25rem;
+  --facit-spacer-2: 0.5rem;
+  --facit-spacer-3: 0.75rem;
+  --facit-spacer-4: 1rem;
+  --facit-spacer-5: 1.5rem;
+  --facit-spacer-6: 2rem;
+  --facit-spacer-7: 3rem;
+  --facit-spacer-8: 4rem;
+
+  --facit-gutter-width: 1.5rem;
+
+  /* ==================== BORDER RADIUS ==================== */
+
+  --facit-radius: 1rem;
+  --facit-radius-sm: 0.875rem;
+  --facit-radius-lg: 1.25rem;
+  --facit-radius-xl: 1.5rem;
+  --facit-radius-2xl: 2rem;
+  --facit-radius-pill: 50rem;
+  --facit-radius-circle: 50%;
+
+  /* ==================== SHADOWS ==================== */
+
+  --facit-shadow-sm: 0 0.8rem 3rem rgba(0, 0, 0, 0.075);
+  --facit-shadow: 0 1.6rem 3rem rgba(0, 0, 0, 0.1);
+  --facit-shadow-lg: 0 1.6rem 3rem rgba(0, 0, 0, 0.175);
+  --facit-shadow-xl: 0 2rem 4rem rgba(0, 0, 0, 0.2);
+
+  /* ==================== TRANSITIONS ==================== */
+
+  --facit-transition-base: 0.2s ease-in-out;
+  --facit-transition-fast: 0.1s ease-in-out;
+  --facit-transition-slow: 0.3s ease-in-out;
+
+  /* ==================== Z-INDEX ==================== */
+
+  --facit-z-dropdown: 1071;
+  --facit-z-sticky: 1020;
+  --facit-z-fixed: 1030;
+  --facit-z-aside: 1035;
+  --facit-z-modal-backdrop: 1040;
+  --facit-z-modal: 1050;
+  --facit-z-popover: 1060;
+  --facit-z-tooltip: 1090;
+
+  /* ==================== LAYOUT ==================== */
+
+  --facit-header-height: 4.5rem;
+  --facit-aside-width: 16rem;
+  --facit-aside-width-collapsed: 5rem;
+  --facit-container-max-width: 1320px;
+
+  /* ==================== CARDS ==================== */
+
+  --facit-card-bg: var(--facit-white);
+  --facit-card-border-color: var(--facit-gray-300);
+  --facit-card-border-width: 0;
+  --facit-card-border-radius: var(--facit-radius-2xl);
+  --facit-card-box-shadow: var(--facit-shadow);
+  --facit-card-spacer-y: 1.5rem;
+  --facit-card-spacer-x: 1.5rem;
+
+  /* ==================== BUTTONS ==================== */
+
+  --facit-btn-padding-y: 0.5rem;
+  --facit-btn-padding-x: 1rem;
+  --facit-btn-font-weight: var(--facit-font-weight-semibold);
+  --facit-btn-border-radius: var(--facit-radius);
+
+  /* ==================== FORMS ==================== */
+
+  --facit-input-bg: var(--facit-gray-100);
+  --facit-input-border-color: var(--facit-gray-100);
+  --facit-input-border-radius: var(--facit-radius);
+  --facit-input-padding-y: 0.5rem;
+  --facit-input-padding-x: 1rem;
+  --facit-input-font-weight: var(--facit-font-weight-semibold);
+  --facit-label-font-weight: var(--facit-font-weight-medium);
+  --facit-label-color: var(--facit-gray-600);
+
+  /* ==================== LIGHT THEME SPECIFIC ==================== */
+
+  --facit-body-bg: #ffffff;
+  --facit-body-color: #323232;
+  --facit-text-primary: #323232;
+  --facit-text-secondary: var(--facit-gray-600);
+  --facit-text-tertiary: var(--facit-gray-500);
+  --facit-text-muted: rgba(108, 117, 125, 0.75);
+
+  --facit-border-color: var(--facit-gray-300);
+  --facit-border-light: rgba(0, 0, 0, 0.1);
+
+  --facit-bg-primary: var(--facit-white);
+  --facit-bg-secondary: var(--facit-gray-100);
+  --facit-bg-tertiary: var(--facit-gray-200);
+
+  --facit-sidebar-bg: var(--facit-white);
+  --facit-sidebar-border: var(--facit-border-color);
+
+  /* ==================== OVERLAYS ==================== */
+
+  --facit-overlay-bg: rgba(0, 0, 0, 0.5);
+  --facit-backdrop-blur: 0.5rem;
+}
+
+/* ==================== DARK THEME ==================== */
+
+[data-theme="dark"] {
+  /* Dark Mode Colors */
+  --facit-body-bg: #1f2128;
+  --facit-body-color: #e7eef8;
+  --facit-text-primary: #e7eef8;
+  --facit-text-secondary: var(--facit-gray-400);
+  --facit-text-tertiary: var(--facit-gray-500);
+  --facit-text-muted: rgba(173, 181, 189, 0.75);
+
+  --facit-border-color: var(--facit-gray-700);
+  --facit-border-light: rgba(255, 255, 255, 0.1);
+
+  --facit-bg-primary: #1f2128;
+  --facit-bg-secondary: #242731;
+  --facit-bg-tertiary: #2d3139;
+
+  /* Dark Cards */
+  --facit-card-bg: #242731;
+  --facit-card-border-color: var(--facit-gray-700);
+
+  /* Dark Forms */
+  --facit-input-bg: var(--facit-gray-900);
+  --facit-input-border-color: var(--facit-gray-800);
+
+  /* Dark Sidebar */
+  --facit-sidebar-bg: #1f2128;
+  --facit-sidebar-border: var(--facit-gray-700);
+
+  /* Adjusted shadows for dark mode */
+  --facit-shadow-sm: 0 0.8rem 3rem rgba(0, 0, 0, 0.3);
+  --facit-shadow: 0 1.6rem 3rem rgba(0, 0, 0, 0.4);
+  --facit-shadow-lg: 0 1.6rem 3rem rgba(0, 0, 0, 0.5);
+
+  /* Dark overlays */
+  --facit-overlay-bg: rgba(0, 0, 0, 0.7);
+}
+
+/* ==================== UTILITY CLASSES ==================== */
+
+.facit-bg-primary {
+  background-color: var(--facit-primary) !important;
+  color: white !important;
+}
+
+.facit-bg-secondary {
+  background-color: var(--facit-secondary) !important;
+  color: white !important;
+}
+
+.facit-bg-success {
+  background-color: var(--facit-success) !important;
+  color: white !important;
+}
+
+.facit-bg-info {
+  background-color: var(--facit-info) !important;
+  color: white !important;
+}
+
+.facit-bg-warning {
+  background-color: var(--facit-warning) !important;
+  color: var(--facit-dark) !important;
+}
+
+.facit-bg-danger {
+  background-color: var(--facit-danger) !important;
+  color: white !important;
+}
+
+.facit-text-primary {
+  color: var(--facit-primary) !important;
+}
+
+.facit-text-secondary {
+  color: var(--facit-secondary) !important;
+}
+
+.facit-text-success {
+  color: var(--facit-success) !important;
+}
+
+.facit-text-info {
+  color: var(--facit-info) !important;
+}
+
+.facit-text-warning {
+  color: var(--facit-warning) !important;
+}
+
+.facit-text-danger {
+  color: var(--facit-danger) !important;
+}
+
+/* ==================== RESPONSIVE BREAKPOINTS ==================== */
+
+/* Extra small devices (phones, less than 576px) */
+/* No media query since this is the default */
+
+/* Small devices (landscape phones, 576px and up) */
+@media (min-width: 576px) {
+  :root {
+    --facit-container-max-width: 540px;
+  }
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) {
+  :root {
+    --facit-container-max-width: 720px;
+  }
+}
+
+/* Large devices (desktops, 992px and up) */
+@media (min-width: 992px) {
+  :root {
+    --facit-container-max-width: 960px;
+  }
+}
+
+/* Extra large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+  :root {
+    --facit-container-max-width: 1140px;
+  }
+}
+
+/* XXL devices (larger desktops, 1400px and up) */
+@media (min-width: 1400px) {
+  :root {
+    --facit-container-max-width: 1320px;
+  }
+}

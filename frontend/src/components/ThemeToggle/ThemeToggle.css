@@ -1,0 +1,72 @@
+/* ============================================
+   THEME TOGGLE COMPONENT
+   ============================================ */
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.theme-toggle-track {
+  position: relative;
+  width: 48px;
+  height: 24px;
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+  transition: background-color var(--transition-base);
+}
+
+.theme-toggle:hover .theme-toggle-track {
+  background-color: var(--bg-hover);
+}
+
+.theme-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  width: 18px;
+  height: 18px;
+  background-color: var(--bg-primary);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--transition-base) ease-in-out,
+              background-color var(--transition-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-toggle-thumb.light {
+  left: 2px;
+  transform: translateX(0);
+}
+
+.theme-toggle-thumb.dark {
+  left: 2px;
+  transform: translateX(24px);
+}
+
+.theme-toggle-icon {
+  color: var(--text-primary);
+}
+
+/* Add subtle color hints */
+.theme-toggle-thumb.light .theme-toggle-icon {
+  color: var(--accent-warning);
+}
+
+.theme-toggle-thumb.dark .theme-toggle-icon {
+  color: var(--accent-primary);
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle-thumb {
+    transition: none;
+  }
+}

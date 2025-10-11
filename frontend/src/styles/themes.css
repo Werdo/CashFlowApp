@@ -1,0 +1,213 @@
+/* ============================================
+   CASHFLOW v3.0 - THEME SYSTEM (Facit-based)
+   ============================================ */
+
+/* ==================== LIGHT THEME (DEFAULT) - Mapped to Facit ==================== */
+:root {
+  /* Backgrounds - Using Facit variables */
+  --bg-primary: var(--facit-white);
+  --bg-secondary: var(--facit-gray-100);
+  --bg-tertiary: var(--facit-gray-200);
+  --bg-hover: var(--facit-gray-100);
+  --bg-active: rgba(108, 93, 211, 0.1); /* Facit primary light */
+
+  /* Text Colors - Using Facit variables */
+  --text-primary: var(--facit-text-primary);
+  --text-secondary: var(--facit-text-secondary);
+  --text-tertiary: var(--facit-text-tertiary);
+  --text-disabled: var(--facit-gray-400);
+  --text-inverse: var(--facit-white);
+
+  /* Accent Colors - Using Facit palette */
+  --accent-primary: var(--facit-primary);
+  --accent-primary-hover: #5a4db8; /* Darker purple */
+  --accent-primary-light: rgba(108, 93, 211, 0.1);
+
+  --accent-secondary: var(--facit-success);
+  --accent-secondary-hover: #3aa896;
+  --accent-secondary-light: rgba(70, 188, 170, 0.1);
+
+  --accent-danger: var(--facit-danger);
+  --accent-danger-hover: #d9471c;
+  --accent-danger-light: rgba(243, 84, 33, 0.1);
+
+  --accent-warning: var(--facit-warning);
+  --accent-warning-hover: #e6ba49;
+  --accent-warning-light: rgba(255, 207, 82, 0.1);
+
+  --accent-info: var(--facit-info);
+  --accent-info-hover: #3d59e1;
+  --accent-info-light: rgba(77, 105, 250, 0.1);
+
+  --accent-purple: var(--facit-primary);
+  --accent-purple-hover: #5a4db8;
+  --accent-purple-light: rgba(108, 93, 211, 0.1);
+
+  /* Borders - Using Facit variables */
+  --border-color: var(--facit-border-color);
+  --border-light: var(--facit-border-light);
+  --border-dark: var(--facit-gray-600);
+
+  /* Shadows - Using Facit shadows */
+  --shadow-sm: var(--facit-shadow-sm);
+  --shadow-md: var(--facit-shadow);
+  --shadow-lg: var(--facit-shadow-lg);
+  --shadow-xl: var(--facit-shadow-xl);
+
+  /* Sidebar - Using Facit sidebar variables */
+  --sidebar-bg: var(--facit-sidebar-bg);
+  --sidebar-border: var(--facit-sidebar-border);
+  --sidebar-item-hover: var(--facit-gray-100);
+  --sidebar-item-active: rgba(108, 93, 211, 0.15);
+  --sidebar-width-expanded: var(--facit-aside-width);
+  --sidebar-width-collapsed: var(--facit-aside-width-collapsed);
+
+  /* Header - Using Facit header variables */
+  --header-bg: var(--facit-white);
+  --header-border: var(--facit-border-color);
+  --header-height: var(--facit-header-height);
+
+  /* Card - Using Facit card variables */
+  --card-bg: var(--facit-card-bg);
+  --card-border: var(--facit-card-border-color);
+
+  /* Input - Using Facit input variables */
+  --input-bg: var(--facit-input-bg);
+  --input-border: var(--facit-input-border-color);
+  --input-focus-border: var(--facit-primary);
+  --input-disabled-bg: var(--facit-gray-200);
+
+  /* Z-Index Levels */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+
+  /* Transitions */
+  --transition-fast: 150ms;
+  --transition-base: 200ms;
+  --transition-slow: 300ms;
+  --transition-slower: 500ms;
+
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+}
+
+/* ==================== DARK THEME (Facit-Inspired) ==================== */
+[data-theme="dark"] {
+  /* Backgrounds - Using Facit dark mode palette */
+  --bg-primary: var(--facit-bg-primary);
+  --bg-secondary: var(--facit-bg-secondary);
+  --bg-tertiary: var(--facit-bg-tertiary);
+  --bg-hover: #343a42;
+  --bg-active: rgba(108, 93, 211, 0.15);
+
+  /* Text Colors - Facit light colors on dark */
+  --text-primary: var(--facit-text-primary);
+  --text-secondary: var(--facit-text-secondary);
+  --text-tertiary: var(--facit-text-tertiary);
+  --text-disabled: var(--facit-gray-600);
+  --text-inverse: var(--facit-bg-primary);
+
+  /* Accent Colors - Facit theme colors for dark mode */
+  --accent-primary: var(--facit-primary);
+  --accent-primary-hover: #5a4db8;
+  --accent-primary-light: rgba(108, 93, 211, 0.15);
+
+  --accent-secondary: var(--facit-success);
+  --accent-secondary-hover: #3aa896;
+  --accent-secondary-light: rgba(70, 188, 170, 0.15);
+
+  --accent-danger: var(--facit-danger);
+  --accent-danger-hover: #d9471c;
+  --accent-danger-light: rgba(243, 84, 33, 0.15);
+
+  --accent-warning: var(--facit-warning);
+  --accent-warning-hover: #e6ba49;
+  --accent-warning-light: rgba(255, 207, 82, 0.15);
+
+  --accent-info: var(--facit-info);
+  --accent-info-hover: #3d59e1;
+  --accent-info-light: rgba(77, 105, 250, 0.15);
+
+  --accent-purple: var(--facit-primary);
+  --accent-purple-hover: #5a4db8;
+  --accent-purple-light: rgba(108, 93, 211, 0.15);
+
+  /* Borders - Facit dark borders */
+  --border-color: var(--facit-border-color);
+  --border-light: var(--facit-border-light);
+  --border-dark: var(--facit-gray-500);
+
+  /* Shadows - Using Facit dark shadows */
+  --shadow-sm: var(--facit-shadow-sm);
+  --shadow-md: var(--facit-shadow);
+  --shadow-lg: var(--facit-shadow-lg);
+  --shadow-xl: 0 2rem 4rem rgba(0, 0, 0, 0.6);
+
+  /* Sidebar - Using Facit sidebar dark */
+  --sidebar-bg: var(--facit-sidebar-bg);
+  --sidebar-border: var(--facit-sidebar-border);
+  --sidebar-item-hover: var(--facit-bg-secondary);
+  --sidebar-item-active: rgba(108, 93, 211, 0.15);
+
+  /* Header - Using Facit header dark */
+  --header-bg: var(--facit-bg-primary);
+  --header-border: var(--facit-border-color);
+
+  /* Card - Using Facit card dark */
+  --card-bg: var(--facit-card-bg);
+  --card-border: var(--facit-card-border-color);
+
+  /* Input - Using Facit input dark */
+  --input-bg: var(--facit-input-bg);
+  --input-border: var(--facit-input-border-color);
+  --input-focus-border: var(--facit-primary);
+  --input-disabled-bg: var(--facit-bg-tertiary);
+}
+
+/* ==================== TRANSITION ANIMATIONS ==================== */
+[data-theme] {
+  transition: background-color var(--transition-base) ease-in-out,
+              color var(--transition-base) ease-in-out,
+              border-color var(--transition-base) ease-in-out;
+}
+
+/* ==================== UTILITY CLASSES ==================== */
+
+/* Backgrounds */
+.bg-primary { background-color: var(--bg-primary); }
+.bg-secondary { background-color: var(--bg-secondary); }
+.bg-tertiary { background-color: var(--bg-tertiary); }
+
+/* Text */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+
+/* Borders */
+.border-color { border-color: var(--border-color); }
+
+/* Shadows */
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+.shadow-xl { box-shadow: var(--shadow-xl); }
+
+/* ==================== RESPONSIVE BREAKPOINTS ==================== */
+/*
+  xs:  < 375px  (Extra small phones)
+  sm:  375-640px  (Small phones)
+  md:  641-768px  (Tablets portrait)
+  lg:  769-1024px (Tablets landscape)
+  xl:  1025-1440px (Desktop)
+  2xl: > 1440px  (Large desktop)
+*/

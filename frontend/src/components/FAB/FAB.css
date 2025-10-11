@@ -1,0 +1,243 @@
+/* ============================================
+   FLOATING ACTION BUTTON (FAB) STYLES
+   ============================================ */
+
+/* ==================== BACKDROP ==================== */
+.fab-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: calc(var(--z-fixed) - 1);
+  animation: fadeIn var(--transition-fast) ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ==================== CONTAINER ==================== */
+.fab-container {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: var(--z-fixed);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+/* ==================== ACTIONS ==================== */
+.fab-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.fab-action {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--card-bg);
+  border: none;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: transform var(--transition-fast),
+              box-shadow var(--transition-fast);
+  animation: slideInRight var(--transition-base) ease-out;
+  animation-fill-mode: both;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.fab-action:hover {
+  transform: translateX(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+.fab-action:active {
+  transform: scale(0.95) translateX(-4px);
+}
+
+/* Action Colors */
+.fab-action-primary {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-hover));
+  color: var(--text-inverse);
+}
+
+.fab-action-success {
+  background: linear-gradient(135deg, var(--accent-secondary), var(--accent-secondary-hover));
+  color: var(--text-inverse);
+}
+
+.fab-action-danger {
+  background: linear-gradient(135deg, var(--accent-danger), var(--accent-danger-hover));
+  color: var(--text-inverse);
+}
+
+.fab-action-warning {
+  background: linear-gradient(135deg, var(--accent-warning), var(--accent-warning-hover));
+  color: var(--text-inverse);
+}
+
+.fab-action-info {
+  background: linear-gradient(135deg, var(--accent-info), var(--accent-info-hover));
+  color: var(--text-inverse);
+}
+
+.fab-action-purple {
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-purple-hover));
+  color: var(--text-inverse);
+}
+
+.fab-action-label {
+  font-weight: 600;
+}
+
+/* ==================== MAIN BUTTON ==================== */
+.fab-button {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-purple));
+  border: none;
+  border-radius: var(--radius-full);
+  color: var(--text-inverse);
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  transition: transform var(--transition-base),
+              box-shadow var(--transition-base);
+}
+
+.fab-button:hover {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-xl);
+}
+
+.fab-button:active {
+  transform: scale(0.95);
+}
+
+.fab-button.rotated {
+  transform: rotate(45deg);
+}
+
+.fab-button.rotated:hover {
+  transform: rotate(45deg) scale(1.1);
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+/* Tablets and smaller */
+@media (max-width: 768px) {
+  .fab-container {
+    bottom: 1.5rem;
+    right: 1.5rem;
+  }
+
+  .fab-actions {
+    gap: 0.5rem;
+  }
+
+  .fab-action {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+
+  .fab-button {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 374px) {
+  .fab-container {
+    bottom: 1rem;
+    right: 1rem;
+  }
+
+  .fab-action-label {
+    display: none;
+  }
+
+  .fab-action {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .fab-button {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* Hide FAB on desktop (optional - can be configured) */
+@media (min-width: 1025px) {
+  /* Optionally hide on desktop or keep visible */
+  /* .fab-container { display: none; } */
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .fab-action {
+    animation: none;
+  }
+
+  .fab-button,
+  .fab-action {
+    transition: none;
+  }
+
+  .fab-button:hover {
+    transform: none;
+  }
+
+  .fab-action:hover {
+    transform: none;
+  }
+}
+
+/* ==================== ACCESSIBILITY ==================== */
+
+/* Focus styles */
+.fab-button:focus-visible,
+.fab-action:focus-visible {
+  outline: 3px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .fab-button,
+  .fab-action {
+    border: 2px solid currentColor;
+  }
+}
