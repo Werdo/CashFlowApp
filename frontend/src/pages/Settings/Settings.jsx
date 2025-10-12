@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Save, User, Bell, Lock, Palette, Globe, Upload, X } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNotifications } from '../../contexts/NotificationContext';
+import API_URL from '../../config/api';
 import './Settings.css';
 
 // Validation schemas
@@ -68,7 +69,7 @@ const Settings = () => {
   const onSubmitProfile = async (data) => {
     try {
       const token = localStorage.getItem('token');
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      
 
       const response = await fetch(`${API_URL}/users/profile`, {
         method: 'PUT',
@@ -93,7 +94,7 @@ const Settings = () => {
   const onSubmitPassword = async (data) => {
     try {
       const token = localStorage.getItem('token');
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      
 
       const response = await fetch(`${API_URL}/users/password`, {
         method: 'PUT',
@@ -126,7 +127,7 @@ const Settings = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      
 
       await fetch(`${API_URL}/users/notifications`, {
         method: 'PUT',
@@ -245,7 +246,7 @@ const Settings = () => {
   const handleSavePreferences = async () => {
     try {
       const token = localStorage.getItem('token');
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      
 
       const response = await fetch(`${API_URL}/users/preferences`, {
         method: 'PUT',

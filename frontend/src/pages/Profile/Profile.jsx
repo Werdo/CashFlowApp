@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { User, Mail, Phone, MapPin, Calendar, Edit2, Save, X, Camera } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationContext';
 import Button from '../../components/Button/Button';
+import API_URL from '../../config/api';
 import './Profile.css';
 
 const Profile = () => {
@@ -35,7 +36,7 @@ const Profile = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      
 
       const response = await fetch(`${API_URL}/users/profile`, {
         method: 'PUT',

@@ -10,8 +10,7 @@ import Layout from './components/Layout/Layout';
 import FAB from './components/FAB/FAB';
 import { useNotifications } from './contexts/NotificationContext';
 import SaveIndicator from './components/SaveIndicator';
-
-const API_URL = 'http://localhost:5000/api';
+import API_URL from './config/api';
 
 const CashFlowApp = () => {
   const { success: notifySuccess, error: notifyError, info: notifyInfo } = useNotifications();

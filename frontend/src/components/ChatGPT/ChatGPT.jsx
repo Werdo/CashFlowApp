@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader, X, Minimize2, Maximize2, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_URL from '../../config/api';
 import './ChatGPT.css';
 
 const ChatGPT = ({ onClose, initialContext }) => {
@@ -46,7 +47,6 @@ const ChatGPT = ({ onClose, initialContext }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
       const response = await axios.post(
         `${API_URL}/chatgpt/ask`,

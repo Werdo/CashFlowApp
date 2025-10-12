@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bot, Save, Key, Settings as SettingsIcon } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationContext';
+import API_URL from '../../config/api';
 import './AISettings.css';
 
 const AISettings = () => {
@@ -29,7 +30,7 @@ const AISettings = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      
 
       const response = await fetch(`${API_URL}/users/ai-settings`, {
         headers: {
@@ -54,7 +55,7 @@ const AISettings = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      
 
       const response = await fetch(`${API_URL}/users/ai-settings`, {
         method: 'PUT',
