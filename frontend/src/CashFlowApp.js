@@ -116,12 +116,6 @@ const CashFlowApp = () => {
     }
   }, []);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      transferSaldoMensual();
-    }
-  }, [cashflowData, isAuthenticated]);
-
   // Auto-save with debounce
   useEffect(() => {
     if (!isAuthenticated || !cashflowData) return;
@@ -287,20 +281,28 @@ const CashFlowApp = () => {
     notifyInfo('Sesión cerrada');
   };
 
+  // Manual function to recalculate month balances
+  // Call explicitly when needed, not automatically
   const transferSaldoMensual = () => {
     setCashflowData(prev => {
       const newData = JSON.parse(JSON.stringify(prev));
 
       for (let i = 1; i < 12; i++) {
-        const prevMonthTotal = calculateMonthTotal(newData.months[i - 1]);
         const firstValidDay = newData.months[i].weeks[0].days.find(d => d.isValid);
 
-        if (firstValidDay && prevMonthTotal.neto !== 0) {
-          const existingSaldo = firstValidDay.ingresos.fijos.find(
-            item => item.description === 'Saldo mes anterior'
+        if (firstValidDay) {
+          // First, remove ALL existing "Saldo mes anterior" entries to avoid duplicates
+          firstValidDay.ingresos.fijos = firstValidDay.ingresos.fijos.filter(
+            item => item.description !== 'Saldo mes anterior'
+          );
+          firstValidDay.gastos.fijos = firstValidDay.gastos.fijos.filter(
+            item => item.description !== 'Saldo mes anterior (negativo)'
           );
 
-          if (!existingSaldo) {
+          // Now calculate previous month total and add new balance entry
+          const prevMonthTotal = calculateMonthTotal(newData.months[i - 1]);
+
+          if (prevMonthTotal.neto !== 0) {
             if (prevMonthTotal.neto > 0) {
               firstValidDay.ingresos.fijos.unshift({
                 id: 'saldo-' + i,
