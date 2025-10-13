@@ -1,47 +1,110 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import './Calendar.css';
+import API_URL from '../../config/api';
 
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
+  const [cashflowData, setCashflowData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data - esto se reemplazará con datos reales del backend
-  const mockTransactions = useMemo(() => {
-    const transactions = [];
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
+  // Obtener datos del cashflow desde el API
+  useEffect(() => {
+    const fetchCashflowData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
 
-    // Generar transacciones aleatorias para el mes actual
-    for (let day = 1; day <= 31; day++) {
-      const date = new Date(currentYear, currentMonth, day);
-      if (date.getMonth() === currentMonth) {
-        transactions.push({
-          date: date.toISOString(),
-          income: Math.random() > 0.7 ? Math.floor(Math.random() * 2000) + 500 : 0,
-          expenses: Math.floor(Math.random() * 500) + 50,
+        const response = await fetch(`${API_URL}/cashflow/2025`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         });
-      }
-    }
-    return transactions;
-  }, [currentDate]);
 
-  // Mock data para resumen anual
-  const annualData = [
-    { month: 'Ene', income: 5000, expenses: 3200, balance: 1800 },
-    { month: 'Feb', income: 5500, expenses: 3400, balance: 2100 },
-    { month: 'Mar', income: 6000, expenses: 3800, balance: 2200 },
-    { month: 'Abr', income: 5200, expenses: 3500, balance: 1700 },
-    { month: 'May', income: 5800, expenses: 3600, balance: 2200 },
-    { month: 'Jun', income: 6200, expenses: 4000, balance: 2200 },
-    { month: 'Jul', income: 5500, expenses: 3700, balance: 1800 },
-    { month: 'Ago', income: 5900, expenses: 3900, balance: 2000 },
-    { month: 'Sep', income: 6100, expenses: 4100, balance: 2000 },
-    { month: 'Oct', income: 5700, expenses: 3800, balance: 1900 },
-    { month: 'Nov', income: 6000, expenses: 4000, balance: 2000 },
-    { month: 'Dic', income: 6500, expenses: 4500, balance: 2000 },
-  ];
+        if (response.ok) {
+          const data = await response.json();
+          setCashflowData(data);
+        }
+      } catch (error) {
+        console.error('Error fetching cashflow data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCashflowData();
+  }, []);
+
+  // Calcular totales por día para el mes actual
+  const dailyTransactions = useMemo(() => {
+    if (!cashflowData || !cashflowData.months) return [];
+
+    const currentMonth = currentDate.getMonth();
+    const monthData = cashflowData.months[currentMonth];
+    if (!monthData) return [];
+
+    const transactions = [];
+
+    monthData.weeks.forEach(week => {
+      week.days.forEach(day => {
+        if (day.isValid) {
+          const dayIncome = [
+            ...day.ingresos.fijos,
+            ...day.ingresos.variables
+          ].reduce((sum, item) => sum + (item.amount || 0), 0);
+
+          const dayExpenses = [
+            ...day.gastos.fijos,
+            ...day.gastos.variables
+          ].reduce((sum, item) => sum + (item.amount || 0), 0);
+
+          transactions.push({
+            date: new Date(currentDate.getFullYear(), currentMonth, day.dayNumber).toISOString(),
+            dayNumber: day.dayNumber,
+            income: dayIncome,
+            expenses: dayExpenses,
+          });
+        }
+      });
+    });
+
+    return transactions;
+  }, [cashflowData, currentDate]);
+
+  // Calcular datos anuales desde cashflow
+  const annualData = useMemo(() => {
+    if (!cashflowData || !cashflowData.months) return [];
+
+    return cashflowData.months.map((monthData, index) => {
+      let monthIncome = 0;
+      let monthExpenses = 0;
+
+      monthData.weeks.forEach(week => {
+        week.days.forEach(day => {
+          if (day.isValid) {
+            monthIncome += [
+              ...day.ingresos.fijos,
+              ...day.ingresos.variables
+            ].reduce((sum, item) => sum + (item.amount || 0), 0);
+
+            monthExpenses += [
+              ...day.gastos.fijos,
+              ...day.gastos.variables
+            ].reduce((sum, item) => sum + (item.amount || 0), 0);
+          }
+        });
+      });
+
+      return {
+        month: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][index],
+        income: monthIncome,
+        expenses: monthExpenses,
+        balance: monthIncome - monthExpenses,
+      };
+    });
+  }, [cashflowData]);
 
   // Calcular días del mes
   const getDaysInMonth = (date) => {
@@ -62,7 +125,7 @@ const Calendar = () => {
     // Días del mes
     for (let day = 1; day <= daysInMonth; day++) {
       const dayDate = new Date(year, month, day);
-      const transaction = mockTransactions.find(t =>
+      const transaction = dailyTransactions.find(t =>
         new Date(t.date).getDate() === day
       );
 
@@ -82,12 +145,12 @@ const Calendar = () => {
 
   // Calcular totales del mes
   const monthTotals = useMemo(() => {
-    return mockTransactions.reduce((acc, t) => ({
+    return dailyTransactions.reduce((acc, t) => ({
       income: acc.income + t.income,
       expenses: acc.expenses + t.expenses,
       balance: acc.income + t.income - (acc.expenses + t.expenses),
     }), { income: 0, expenses: 0, balance: 0 });
-  }, [mockTransactions]);
+  }, [dailyTransactions]);
 
   // Calcular totales anuales
   const annualTotals = useMemo(() => {
@@ -118,6 +181,24 @@ const Calendar = () => {
   ];
 
   const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+  if (loading) {
+    return (
+      <div className="calendar-page">
+        <div className="calendar-header">
+          <div className="calendar-header-left">
+            <div className="calendar-icon-wrapper">
+              <CalendarIcon size={32} />
+            </div>
+            <div>
+              <h1 className="calendar-title">Calendario Financiero</h1>
+              <p className="calendar-subtitle">Cargando datos...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="calendar-page">
@@ -223,7 +304,7 @@ const Calendar = () => {
           <h3 className="section-title">Evolución Mensual</h3>
           <div className="chart-container">
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={mockTransactions}>
+              <AreaChart data={dailyTransactions}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
                 <XAxis
                   dataKey="date"
