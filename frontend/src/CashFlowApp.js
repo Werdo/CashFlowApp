@@ -132,34 +132,61 @@ const CashFlowApp = () => {
   // Load cashflow data from backend
   const loadCashflowData = async () => {
     try {
-      const response = await fetch(`${API_URL}/cashflow?year=2025`, {
+      const year = new Date().getFullYear();
+      console.log('🔄 Loading cashflow data for year:', year);
+      const response = await fetch(`${API_URL}/cashflow?year=${year}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+
+      if (!response.ok) {
+        console.error('❌ Failed to load cashflow:', response.status);
+        return;
+      }
+
       const data = await response.json();
+      console.log('📥 Loaded cashflow data:', data);
+
       if (data.months && data.months.length > 0) {
         setCashflowData({ months: data.months });
+      } else {
+        console.log('⚠️ No months data in response');
       }
     } catch (err) {
-      console.error('Error loading cashflow data:', err);
+      console.error('❌ Error loading cashflow data:', err);
     }
   };
 
   // Save cashflow data to backend (silent, no notifications)
   const saveCashflowDataSilent = async () => {
     try {
-      await fetch(`${API_URL}/cashflow`, {
+      const year = new Date().getFullYear();
+      console.log('💾 Saving cashflow data for year:', year);
+      console.log('📤 Data to save:', { year, monthsCount: cashflowData.months.length });
+
+      const response = await fetch(`${API_URL}/cashflow`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          year: 2025,
+          year: year,
           months: cashflowData.months
         })
       });
+
+      if (!response.ok) {
+        console.error('❌ Save failed with status:', response.status);
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
+        setSaveStatus('error');
+        setTimeout(() => setSaveStatus('idle'), 3000);
+        return;
+      }
+
+      const result = await response.json();
+      console.log('✅ Auto-guardado exitoso:', result);
       setSaveStatus('saved');
-      console.log('✅ Auto-guardado exitoso');
 
       // Hide indicator after 2 seconds
       setTimeout(() => setSaveStatus('idle'), 2000);
@@ -176,6 +203,9 @@ const CashFlowApp = () => {
   const saveCashflowData = async () => {
     try {
       setLoading(true);
+      const year = new Date().getFullYear();
+      console.log('💾 Manual save for year:', year);
+
       const response = await fetch(`${API_URL}/cashflow`, {
         method: 'POST',
         headers: {
@@ -183,14 +213,22 @@ const CashFlowApp = () => {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          year: 2025,
+          year: year,
           months: cashflowData.months
         })
       });
-      await response.json();
+
+      if (!response.ok) {
+        console.error('❌ Manual save failed:', response.status);
+        throw new Error('Save failed');
+      }
+
+      const result = await response.json();
+      console.log('✅ Manual save successful:', result);
       setError(null);
       notifySuccess('Datos guardados exitosamente');
     } catch (err) {
+      console.error('❌ Error in manual save:', err);
       setError('Error al guardar datos');
       notifyError('Error al guardar datos');
     } finally {
