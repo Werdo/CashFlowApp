@@ -26,6 +26,12 @@ import Help from './pages/Help/Help';
 import AIAnalysis from './pages/AIAnalysis/AIAnalysis';
 import AISettings from './pages/AISettings/AISettings';
 
+// Admin pages
+import AdminBackend from './pages/Admin/AdminBackend';
+import AdminUsers from './pages/Admin/AdminUsers';
+import AdminDatabase from './pages/Admin/AdminDatabase';
+import AdminSecurity from './pages/Admin/AdminSecurity';
+
 function App() {
   return (
     <ThemeProvider>
@@ -157,6 +163,40 @@ function AppContent() {
         element={
           <PrivateRoute>
             <Layout><AISettings /></Layout>
+          </PrivateRoute>
+        }
+      />
+
+      {/* Admin routes */}
+      <Route
+        path="/admin/backend"
+        element={
+          <PrivateRoute>
+            <Layout><AdminBackend /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <PrivateRoute>
+            <Layout><AdminUsers /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/admin/database"
+        element={
+          <PrivateRoute>
+            <Layout><AdminDatabase /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/admin/security"
+        element={
+          <PrivateRoute>
+            <Layout><AdminSecurity /></Layout>
           </PrivateRoute>
         }
       />
