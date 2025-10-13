@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Filter } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import './Calendar.css';
 import API_URL from '../../config/api';
@@ -9,6 +9,10 @@ const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [cashflowData, setCashflowData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('month'); // month, quarter, year, custom
+  const [selectedQuarter, setSelectedQuarter] = useState(Math.floor(new Date().getMonth() / 3) + 1);
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
 
   // Obtener datos del cashflow desde el API
   useEffect(() => {
@@ -220,6 +224,73 @@ const Calendar = () => {
             <p className="calendar-subtitle">Visualiza tus transacciones por día, mes y año</p>
           </div>
         </div>
+      </div>
+
+      {/* Period Selector */}
+      <div className="calendar-period-selector">
+        <div className="period-selector-label">
+          <Filter size={18} />
+          <span>Período:</span>
+        </div>
+        <div className="period-selector-buttons">
+          <button
+            className={`period-btn ${viewMode === 'month' ? 'active' : ''}`}
+            onClick={() => setViewMode('month')}
+          >
+            Mes
+          </button>
+          <button
+            className={`period-btn ${viewMode === 'quarter' ? 'active' : ''}`}
+            onClick={() => setViewMode('quarter')}
+          >
+            Trimestre
+          </button>
+          <button
+            className={`period-btn ${viewMode === 'year' ? 'active' : ''}`}
+            onClick={() => setViewMode('year')}
+          >
+            Año
+          </button>
+          <button
+            className={`period-btn ${viewMode === 'custom' ? 'active' : ''}`}
+            onClick={() => setViewMode('custom')}
+          >
+            Personalizado
+          </button>
+        </div>
+
+        {/* Custom Date Range */}
+        {viewMode === 'custom' && (
+          <div className="custom-date-range">
+            <input
+              type="date"
+              value={customStart}
+              onChange={(e) => setCustomStart(e.target.value)}
+              className="date-input"
+            />
+            <span>hasta</span>
+            <input
+              type="date"
+              value={customEnd}
+              onChange={(e) => setCustomEnd(e.target.value)}
+              className="date-input"
+            />
+          </div>
+        )}
+
+        {/* Quarter Selector */}
+        {viewMode === 'quarter' && (
+          <select
+            value={selectedQuarter}
+            onChange={(e) => setSelectedQuarter(parseInt(e.target.value))}
+            className="quarter-select"
+          >
+            <option value={1}>Q1 (Ene-Mar)</option>
+            <option value={2}>Q2 (Abr-Jun)</option>
+            <option value={3}>Q3 (Jul-Sep)</option>
+            <option value={4}>Q4 (Oct-Dic)</option>
+          </select>
+        )}
       </div>
 
       {/* Month Stats Cards */}
