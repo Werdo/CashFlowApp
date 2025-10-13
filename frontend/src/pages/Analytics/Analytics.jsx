@@ -1,28 +1,211 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { TrendingUp, TrendingDown, Calendar, DollarSign, PieChart } from 'lucide-react';
 import './Analytics.css';
+import API_URL from '../../config/api';
 
 const Analytics = () => {
   const [viewMode, setViewMode] = useState('weekly');
+  const [cashflowData, setCashflowData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedYear] = useState(2025);
 
-  // Mock data
-  const weeklyData = {
-    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-    income: [500, 0, 300, 0, 0, 200, 150],
-    expense: [50, 80, 45, 120, 95, 150, 200],
-  };
+  // Fetch cashflow data
+  useEffect(() => {
+    const fetchCashflowData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
 
-  const monthlyData = {
-    labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
-    income: [1800, 2200, 1950, 2100],
-    expense: [850, 920, 780, 1050],
-  };
+        const response = await fetch(`${API_URL}/cashflow/${selectedYear}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
 
-  const yearlyData = {
-    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-    income: [3500, 3800, 4200, 3900, 4500, 4100, 4300, 4000, 4600, 4700, 4400, 4800],
-    expense: [1800, 2100, 1950, 2200, 2000, 2300, 2150, 2400, 2250, 2350, 2100, 2500],
-  };
+        if (response.ok) {
+          const data = await response.json();
+          setCashflowData(data);
+        }
+      } catch (error) {
+        console.error('Error fetching cashflow data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCashflowData();
+  }, [selectedYear]);
+
+  // Calculate weekly data (last 7 days)
+  const weeklyData = useMemo(() => {
+    if (!cashflowData?.months) {
+      return {
+        labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+        income: [0, 0, 0, 0, 0, 0, 0],
+        expense: [0, 0, 0, 0, 0, 0, 0],
+      };
+    }
+
+    const today = new Date();
+    const last7Days = [];
+    const labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    const income = new Array(7).fill(0);
+    const expense = new Array(7).fill(0);
+
+    // Get last 7 days
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      last7Days.push(date);
+    }
+
+    last7Days.forEach((date, idx) => {
+      const monthIndex = date.getMonth();
+      const dayNumber = date.getDate();
+      const monthData = cashflowData.months[monthIndex];
+
+      if (monthData) {
+        monthData.weeks.forEach(week => {
+          week.days.forEach(day => {
+            if (day.isValid && day.dayNumber === dayNumber) {
+              const dayIncome = [
+                ...day.ingresos.fijos,
+                ...day.ingresos.variables
+              ].reduce((sum, item) => sum + (item.amount || 0), 0);
+
+              const dayExpense = [
+                ...day.gastos.fijos,
+                ...day.gastos.variables
+              ].reduce((sum, item) => sum + (item.amount || 0), 0);
+
+              income[idx] = dayIncome;
+              expense[idx] = dayExpense;
+            }
+          });
+        });
+      }
+    });
+
+    return { labels, income, expense };
+  }, [cashflowData]);
+
+  // Calculate monthly data (last 4 weeks)
+  const monthlyData = useMemo(() => {
+    if (!cashflowData?.months) {
+      return {
+        labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
+        income: [0, 0, 0, 0],
+        expense: [0, 0, 0, 0],
+      };
+    }
+
+    const currentMonth = new Date().getMonth();
+    const monthData = cashflowData.months[currentMonth];
+    const labels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
+    const income = [0, 0, 0, 0];
+    const expense = [0, 0, 0, 0];
+
+    if (monthData) {
+      monthData.weeks.forEach((week, weekIdx) => {
+        if (weekIdx < 4) {
+          week.days.forEach(day => {
+            if (day.isValid) {
+              const dayIncome = [
+                ...day.ingresos.fijos,
+                ...day.ingresos.variables
+              ].reduce((sum, item) => sum + (item.amount || 0), 0);
+
+              const dayExpense = [
+                ...day.gastos.fijos,
+                ...day.gastos.variables
+              ].reduce((sum, item) => sum + (item.amount || 0), 0);
+
+              income[weekIdx] += dayIncome;
+              expense[weekIdx] += dayExpense;
+            }
+          });
+        }
+      });
+    }
+
+    return { labels, income, expense };
+  }, [cashflowData]);
+
+  // Calculate yearly data (all 12 months)
+  const yearlyData = useMemo(() => {
+    if (!cashflowData?.months) {
+      return {
+        labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+        income: new Array(12).fill(0),
+        expense: new Array(12).fill(0),
+      };
+    }
+
+    const labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const income = new Array(12).fill(0);
+    const expense = new Array(12).fill(0);
+
+    cashflowData.months.forEach((monthData, monthIdx) => {
+      monthData.weeks.forEach(week => {
+        week.days.forEach(day => {
+          if (day.isValid) {
+            const dayIncome = [
+              ...day.ingresos.fijos,
+              ...day.ingresos.variables
+            ].reduce((sum, item) => sum + (item.amount || 0), 0);
+
+            const dayExpense = [
+              ...day.gastos.fijos,
+              ...day.gastos.variables
+            ].reduce((sum, item) => sum + (item.amount || 0), 0);
+
+            income[monthIdx] += dayIncome;
+            expense[monthIdx] += dayExpense;
+          }
+        });
+      });
+    });
+
+    return { labels, income, expense };
+  }, [cashflowData]);
+
+  // Calculate top categories from real data
+  const topCategories = useMemo(() => {
+    if (!cashflowData?.months) {
+      return [];
+    }
+
+    const categoryTotals = {};
+
+    cashflowData.months.forEach(monthData => {
+      monthData.weeks.forEach(week => {
+        week.days.forEach(day => {
+          if (day.isValid) {
+            // Process all expenses and group by hashtags
+            [...day.gastos.fijos, ...day.gastos.variables].forEach(item => {
+              if (item.amount > 0) {
+                const category = item.hashtags?.[0] || item.description || 'Otros';
+                categoryTotals[category] = (categoryTotals[category] || 0) + item.amount;
+              }
+            });
+          }
+        });
+      });
+    });
+
+    // Convert to array and sort by amount
+    const categories = Object.entries(categoryTotals)
+      .map(([name, amount]) => ({ name, amount }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 5);
+
+    // Assign colors
+    const colors = ['#ef4444', '#f59e0b', '#8b5cf6', '#3b82f6', '#6b7280'];
+    return categories.map((cat, idx) => ({
+      ...cat,
+      color: colors[idx % colors.length]
+    }));
+  }, [cashflowData]);
 
   const currentData = viewMode === 'weekly' ? weeklyData : viewMode === 'monthly' ? monthlyData : yearlyData;
 
@@ -34,17 +217,27 @@ const Analytics = () => {
 
   const maxValue = Math.max(...currentData.income, ...currentData.expense);
 
-  const topCategories = [
-    { name: 'Alimentación', amount: 450, color: '#ef4444' },
-    { name: 'Transporte', amount: 320, color: '#f59e0b' },
-    { name: 'Entretenimiento', amount: 280, color: '#8b5cf6' },
-    { name: 'Servicios', amount: 250, color: '#3b82f6' },
-    { name: 'Otros', amount: 180, color: '#6b7280' },
-  ];
-
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value);
   };
+
+  if (loading) {
+    return (
+      <div className="analytics-page">
+        <div className="analytics-header">
+          <div className="analytics-header-left">
+            <div className="analytics-icon-wrapper">
+              <PieChart size={32} />
+            </div>
+            <div>
+              <h1 className="analytics-title">Analytics</h1>
+              <p className="analytics-subtitle">Cargando datos...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="analytics-page">
