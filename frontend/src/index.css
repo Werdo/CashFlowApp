@@ -1,6 +1,7 @@
 /* Import Facit Design System Variables FIRST */
 @import './styles/facit-variables.css';
 @import './styles/themes.css';
+@import './styles/design-system.css';
 
 @tailwind base;
 @tailwind components;
