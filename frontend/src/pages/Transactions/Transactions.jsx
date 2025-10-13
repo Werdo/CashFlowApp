@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Receipt, Filter, X, Edit2, Check, TrendingUp, TrendingDown, Calendar, Hash, Folder } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './Transactions.css';
+import API_URL from '../../config/api';
 
 const Transactions = () => {
   const [showFilters, setShowFilters] = useState(false);
@@ -15,6 +16,125 @@ const Transactions = () => {
   });
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [cashflowData, setCashflowData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch cashflow data from API
+  useEffect(() => {
+    const fetchCashflowData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch(`${API_URL}/cashflow/2025`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setCashflowData(data);
+        }
+      } catch (error) {
+        console.error('Error fetching cashflow data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCashflowData();
+  }, []);
+
+  // Transform cashflow data into transactions list
+  const transactions = useMemo(() => {
+    if (!cashflowData || !cashflowData.months) return [];
+
+    const transactionsList = [];
+    let transactionId = 1;
+
+    cashflowData.months.forEach((monthData, monthIndex) => {
+      monthData.weeks.forEach(week => {
+        week.days.forEach(day => {
+          if (day.isValid) {
+            const dayDate = new Date(2025, monthIndex, day.dayNumber);
+            const dateStr = dayDate.toISOString().split('T')[0];
+
+            // Add fixed income transactions
+            day.ingresos.fijos.forEach(item => {
+              if (item.amount > 0) {
+                transactionsList.push({
+                  id: transactionId++,
+                  type: 'income',
+                  description: item.description || 'Ingreso Fijo',
+                  amount: item.amount,
+                  date: dateStr,
+                  checked: item.checked || false,
+                  hashtags: item.hashtags || ['fijo'],
+                  group: 'Ingresos Fijos',
+                  notes: item.notes || '',
+                });
+              }
+            });
+
+            // Add variable income transactions
+            day.ingresos.variables.forEach(item => {
+              if (item.amount > 0) {
+                transactionsList.push({
+                  id: transactionId++,
+                  type: 'income',
+                  description: item.description || 'Ingreso Variable',
+                  amount: item.amount,
+                  date: dateStr,
+                  checked: item.checked || false,
+                  hashtags: item.hashtags || ['variable'],
+                  group: 'Ingresos Variables',
+                  notes: item.notes || '',
+                });
+              }
+            });
+
+            // Add fixed expense transactions
+            day.gastos.fijos.forEach(item => {
+              if (item.amount > 0) {
+                transactionsList.push({
+                  id: transactionId++,
+                  type: 'expense',
+                  description: item.description || 'Gasto Fijo',
+                  amount: item.amount,
+                  date: dateStr,
+                  checked: item.checked || false,
+                  hashtags: item.hashtags || ['fijo'],
+                  group: 'Gastos Fijos',
+                  notes: item.notes || '',
+                });
+              }
+            });
+
+            // Add variable expense transactions
+            day.gastos.variables.forEach(item => {
+              if (item.amount > 0) {
+                transactionsList.push({
+                  id: transactionId++,
+                  type: 'expense',
+                  description: item.description || 'Gasto Variable',
+                  amount: item.amount,
+                  date: dateStr,
+                  checked: item.checked || false,
+                  hashtags: item.hashtags || ['variable'],
+                  group: 'Gastos Variables',
+                  notes: item.notes || '',
+                });
+              }
+            });
+          }
+        });
+      });
+    });
+
+    // Sort by date descending (newest first)
+    return transactionsList.sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [cashflowData]);
 
   // Mock data - se reemplazará con datos del backend
   const mockTransactions = [
@@ -77,7 +197,7 @@ const Transactions = () => {
 
   // Filtrado de transacciones
   const filteredTransactions = useMemo(() => {
-    return mockTransactions.filter(transaction => {
+    return transactions.filter(transaction => {
       // Filtro por tipo
       if (filters.type !== 'all' && transaction.type !== filters.type) {
         return false;
@@ -115,7 +235,7 @@ const Transactions = () => {
 
       return true;
     });
-  }, [filters]);
+  }, [filters, transactions]);
 
   // Calcular totales
   const totals = useMemo(() => {
@@ -182,8 +302,26 @@ const Transactions = () => {
   };
 
   // Get unique hashtags and groups for filters
-  const uniqueHashtags = [...new Set(mockTransactions.flatMap(t => t.hashtags))];
-  const uniqueGroups = [...new Set(mockTransactions.map(t => t.group))];
+  const uniqueHashtags = [...new Set(transactions.flatMap(t => t.hashtags))];
+  const uniqueGroups = [...new Set(transactions.map(t => t.group))];
+
+  if (loading) {
+    return (
+      <div className="transactions-page">
+        <div className="transactions-header">
+          <div className="transactions-header-left">
+            <div className="transactions-icon-wrapper">
+              <Receipt size={32} />
+            </div>
+            <div>
+              <h1 className="transactions-title">Transacciones</h1>
+              <p className="transactions-subtitle">Cargando transacciones...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="transactions-page">
