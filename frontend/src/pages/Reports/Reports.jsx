@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart3, Calendar, TrendingUp, TrendingDown, Download, FileText } from 'lucide-react';
 import './Reports.css';
+import API_URL from '../../config/api';
 
 const Reports = () => {
   const [periodType, setPeriodType] = useState('month');
@@ -12,6 +13,32 @@ const Reports = () => {
   const [customDateTo, setCustomDateTo] = useState('');
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [cashflowData, setCashflowData] = useState(null);
+
+  // Fetch cashflow data
+  useEffect(() => {
+    const fetchCashflowData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch(`${API_URL}/cashflow/${selectedYear}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setCashflowData(data);
+        }
+      } catch (error) {
+        console.error('Error fetching cashflow data:', error);
+      }
+    };
+
+    fetchCashflowData();
+  }, [selectedYear]);
 
   const periodTypes = [
     { value: 'day', label: 'Día' },
@@ -35,44 +62,131 @@ const Reports = () => {
   ];
 
   const handleGenerateReport = () => {
+    if (!cashflowData) {
+      alert('No hay datos de cashflow disponibles');
+      return;
+    }
+
     setLoading(true);
-    // TODO: Call API
-    setTimeout(() => {
-      const mockReport = {
+
+    try {
+      let totalIncome = 0;
+      let totalExpense = 0;
+      let transactionCount = 0;
+      let incomeFixedTotal = 0;
+      let incomeVariableTotal = 0;
+      let expenseFixedTotal = 0;
+      let expenseVariableTotal = 0;
+
+      // Determine which months to process based on period type
+      let monthsToProcess = [];
+
+      switch (periodType) {
+        case 'month':
+          monthsToProcess = [selectedMonth - 1];
+          break;
+        case 'quarter':
+          const quarterStart = (selectedQuarter - 1) * 3;
+          monthsToProcess = [quarterStart, quarterStart + 1, quarterStart + 2];
+          break;
+        case 'year':
+          monthsToProcess = Array.from({ length: 12 }, (_, i) => i);
+          break;
+        case 'custom':
+          // For custom, we'll filter by date later
+          monthsToProcess = Array.from({ length: 12 }, (_, i) => i);
+          break;
+        default:
+          monthsToProcess = [selectedMonth - 1];
+      }
+
+      // Process each month
+      monthsToProcess.forEach(monthIndex => {
+        if (!cashflowData.months[monthIndex]) return;
+
+        const monthData = cashflowData.months[monthIndex];
+
+        monthData.weeks.forEach(week => {
+          week.days.forEach(day => {
+            if (!day.isValid) return;
+
+            // For custom dates, check if date is in range
+            if (periodType === 'custom' && customDateFrom && customDateTo) {
+              const dayDate = new Date(selectedYear, monthIndex, day.dayNumber);
+              const dateStr = dayDate.toISOString().split('T')[0];
+              if (dateStr < customDateFrom || dateStr > customDateTo) return;
+            }
+
+            // Count and sum fixed income
+            day.ingresos.fijos.forEach(item => {
+              if (item.amount > 0) {
+                totalIncome += item.amount;
+                incomeFixedTotal += item.amount;
+                transactionCount++;
+              }
+            });
+
+            // Count and sum variable income
+            day.ingresos.variables.forEach(item => {
+              if (item.amount > 0) {
+                totalIncome += item.amount;
+                incomeVariableTotal += item.amount;
+                transactionCount++;
+              }
+            });
+
+            // Count and sum fixed expenses
+            day.gastos.fijos.forEach(item => {
+              if (item.amount > 0) {
+                totalExpense += item.amount;
+                expenseFixedTotal += item.amount;
+                transactionCount++;
+              }
+            });
+
+            // Count and sum variable expenses
+            day.gastos.variables.forEach(item => {
+              if (item.amount > 0) {
+                totalExpense += item.amount;
+                expenseVariableTotal += item.amount;
+                transactionCount++;
+              }
+            });
+          });
+        });
+      });
+
+      const balance = totalIncome - totalExpense;
+
+      const generatedReport = {
         period: periodType,
         generatedAt: new Date().toISOString(),
         summary: {
-          totalIncome: 4700,
-          totalExpense: 1845.50,
-          balance: 2854.50,
-          transactionCount: 15
+          totalIncome,
+          totalExpense,
+          balance,
+          transactionCount
         },
         breakdown: {
           incomeByCategory: [
-            { category: 'Ingresos Fijos', amount: 3500 },
-            { category: 'Ingresos Variables', amount: 1200 }
-          ],
+            { category: 'Ingresos Fijos', amount: incomeFixedTotal },
+            { category: 'Ingresos Variables', amount: incomeVariableTotal }
+          ].filter(item => item.amount > 0),
           expenseByCategory: [
-            { category: 'Gastos Fijos', amount: 900 },
-            { category: 'Gastos Variables', amount: 945.50 }
-          ]
+            { category: 'Gastos Fijos', amount: expenseFixedTotal },
+            { category: 'Gastos Variables', amount: expenseVariableTotal }
+          ].filter(item => item.amount > 0)
         },
-        comparison: periodType !== 'custom' ? {
-          previousPeriod: {
-            totalIncome: 4200,
-            totalExpense: 1950,
-            balance: 2250
-          },
-          change: {
-            income: '+11.9%',
-            expense: '-5.4%',
-            balance: '+26.9%'
-          }
-        } : null
+        comparison: null // TODO: Implement comparison with previous period
       };
-      setReport(mockReport);
+
+      setReport(generatedReport);
+    } catch (error) {
+      console.error('Error generating report:', error);
+      alert('Error al generar el reporte');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const handleExportPDF = () => {
