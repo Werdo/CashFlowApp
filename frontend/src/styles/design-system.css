@@ -659,6 +659,98 @@ select:disabled {
 }
 
 /* ============================================
+   TAILWIND COLOR OVERRIDES FOR DARK MODE
+   ============================================ */
+
+/* Text Colors - adaptan al tema */
+.text-gray-600 {
+  color: var(--text-secondary) !important;
+}
+
+.text-green-600 {
+  color: var(--accent-secondary) !important;
+}
+
+.text-red-600 {
+  color: var(--accent-danger) !important;
+}
+
+.text-blue-600 {
+  color: var(--accent-primary) !important;
+}
+
+/* Background Colors - adaptan al tema */
+.bg-gray-50 {
+  background-color: var(--surface-secondary) !important;
+}
+
+.bg-green-50 {
+  background-color: var(--accent-secondary-light) !important;
+}
+
+.bg-red-50 {
+  background-color: var(--accent-danger-light) !important;
+}
+
+.bg-blue-50 {
+  background-color: var(--accent-primary-light) !important;
+}
+
+/* Hover backgrounds */
+.hover\:bg-blue-50:hover {
+  background-color: var(--accent-primary-light) !important;
+}
+
+.hover\:bg-gray-50:hover {
+  background-color: var(--surface-secondary) !important;
+}
+
+/* Border colors */
+.border-gray-300 {
+  border-color: var(--border-color) !important;
+}
+
+.border-gray-200 {
+  border-color: var(--border-light) !important;
+}
+
+.border-green-200 {
+  border-color: var(--accent-secondary-light) !important;
+}
+
+.border-red-200 {
+  border-color: var(--accent-danger-light) !important;
+}
+
+.border-green-500 {
+  border-color: var(--accent-secondary) !important;
+}
+
+.border-red-500 {
+  border-color: var(--accent-danger) !important;
+}
+
+/* Hover text colors */
+.hover\:text-red-800:hover {
+  color: var(--accent-danger) !important;
+  filter: brightness(0.8);
+}
+
+.hover\:text-blue-800:hover {
+  color: var(--accent-primary) !important;
+  filter: brightness(0.8);
+}
+
+/* Tables and general text */
+td, th, tr {
+  color: var(--text-primary);
+}
+
+table {
+  border-color: var(--border-color);
+}
+
+/* ============================================
    PRINT STYLES
    ============================================ */
 
