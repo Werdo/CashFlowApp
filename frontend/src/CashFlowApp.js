@@ -40,6 +40,12 @@ const CashFlowApp = () => {
   const [showDailyCash, setShowDailyCash] = useState(false);
   const [showGroupedExpenses, setShowGroupedExpenses] = useState(false);
 
+  // Year management
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [availableYears, setAvailableYears] = useState([]);
+  const [showYearModal, setShowYearModal]= useState(false);
+  const [newYearInput, setNewYearInput] = useState('');
+
   // Save status: 'idle', 'saving', 'saved', 'error'
   const [saveStatus, setSaveStatus] = useState('idle');
 
@@ -103,6 +109,7 @@ const CashFlowApp = () => {
         if (data._id) {
           setUser(data);
           setIsAuthenticated(true);
+          loadAvailableYears();
           loadCashflowData();
         } else {
           localStorage.removeItem('token');
@@ -115,6 +122,14 @@ const CashFlowApp = () => {
       });
     }
   }, []);
+
+  // Reload cashflow data when selectedYear changes
+  useEffect(() => {
+    if (isAuthenticated && selectedYear) {
+      console.log('📅 Year changed to:', selectedYear);
+      loadCashflowData();
+    }
+  }, [selectedYear, isAuthenticated]);
 
   // Auto-save with debounce
   useEffect(() => {
@@ -129,12 +144,78 @@ const CashFlowApp = () => {
     return () => clearTimeout(timeoutId);
   }, [cashflowData, isAuthenticated]);
 
+  // Load available years from backend
+  const loadAvailableYears = async () => {
+    try {
+      console.log('📅 Loading available years...');
+      const response = await fetch(`${API_URL}/years`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        console.error('❌ Failed to load years:', response.status);
+        return;
+      }
+
+      const years = await response.json();
+      console.log('📅 Available years:', years);
+      setAvailableYears(years);
+
+      // If current year doesn't exist, create it
+      const currentYear = new Date().getFullYear();
+      if (!years.find(y => y.year === currentYear)) {
+        await createYear(currentYear);
+      }
+    } catch (err) {
+      console.error('❌ Error loading years:', err);
+    }
+  };
+
+  // Create a new year
+  const createYear = async (year) => {
+    try {
+      console.log('➕ Creating new year:', year);
+      const response = await fetch(`${API_URL}/years`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          year: parseInt(year),
+          name: `Año ${year}`
+        })
+      });
+
+      if (!response.ok) {
+        console.error('❌ Failed to create year:', response.status);
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
+        alert(`Error al crear el año ${year}`);
+        return;
+      }
+
+      const result = await response.json();
+      console.log('✅ Year created successfully:', result);
+
+      // Reload available years
+      await loadAvailableYears();
+
+      // Switch to the new year
+      setSelectedYear(parseInt(year));
+
+      alert(`Año ${year} creado exitosamente`);
+    } catch (err) {
+      console.error('❌ Error creating year:', err);
+      alert(`Error al crear el año ${year}`);
+    }
+  };
+
   // Load cashflow data from backend
   const loadCashflowData = async () => {
     try {
-      const year = new Date().getFullYear();
-      console.log('🔄 Loading cashflow data for year:', year);
-      const response = await fetch(`${API_URL}/cashflow?year=${year}`, {
+      console.log('🔄 Loading cashflow data for year:', selectedYear);
+      const response = await fetch(`${API_URL}/cashflow?year=${selectedYear}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -159,9 +240,8 @@ const CashFlowApp = () => {
   // Save cashflow data to backend (silent, no notifications)
   const saveCashflowDataSilent = async () => {
     try {
-      const year = new Date().getFullYear();
-      console.log('💾 Saving cashflow data for year:', year);
-      console.log('📤 Data to save:', { year, monthsCount: cashflowData.months.length });
+      console.log('💾 Saving cashflow data for year:', selectedYear);
+      console.log('📤 Data to save:', { year: selectedYear, monthsCount: cashflowData.months.length });
 
       const response = await fetch(`${API_URL}/cashflow`, {
         method: 'POST',
@@ -170,7 +250,7 @@ const CashFlowApp = () => {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          year: year,
+          year: selectedYear,
           months: cashflowData.months
         })
       });
@@ -203,8 +283,7 @@ const CashFlowApp = () => {
   const saveCashflowData = async () => {
     try {
       setLoading(true);
-      const year = new Date().getFullYear();
-      console.log('💾 Manual save for year:', year);
+      console.log('💾 Manual save for year:', selectedYear);
 
       const response = await fetch(`${API_URL}/cashflow`, {
         method: 'POST',
@@ -213,7 +292,7 @@ const CashFlowApp = () => {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          year: year,
+          year: selectedYear,
           months: cashflowData.months
         })
       });
@@ -1140,9 +1219,31 @@ const CashFlowApp = () => {
         {renderTooltip()}
         <div className="max-w-7xl mx-auto p-6">
           <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-800 mb-2">Dashboard CashFlow 2025</h1>
-              <p className="text-gray-600">Versión 3.0 - Mobile First + AI</p>
+            <div className="flex items-center gap-4">
+              <div>
+                <h1 className="text-4xl font-bold text-gray-800 mb-2">Dashboard CashFlow {selectedYear}</h1>
+                <p className="text-gray-600">Versión 3.0 - Mobile First + AI</p>
+              </div>
+              <div className="flex gap-2 items-center">
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  className="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg text-lg font-semibold text-gray-800 hover:border-blue-500 focus:outline-none focus:border-blue-500 shadow-sm"
+                >
+                  {availableYears.map(yearObj => (
+                    <option key={yearObj.year} value={yearObj.year}>
+                      {yearObj.year}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => setShowYearModal(true)}
+                  className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 shadow-lg text-lg font-bold"
+                  title="Crear nuevo año"
+                >
+                  +
+                </button>
+              </div>
             </div>
             <div className="flex gap-3 items-center">
               <button
@@ -1214,6 +1315,58 @@ const CashFlowApp = () => {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {showYearModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-2xl font-bold text-gray-800">Crear Nuevo Año</h3>
+                  <button onClick={() => setShowYearModal(false)} className="text-gray-500 hover:text-gray-700">
+                    <X size={24} />
+                  </button>
+                </div>
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Año
+                  </label>
+                  <input
+                    type="number"
+                    value={newYearInput}
+                    onChange={(e) => setNewYearInput(e.target.value)}
+                    placeholder="ej. 2027"
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    min="2020"
+                    max="2050"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      if (newYearInput && parseInt(newYearInput) > 2020 && parseInt(newYearInput) < 2050) {
+                        createYear(newYearInput);
+                        setShowYearModal(false);
+                        setNewYearInput('');
+                      } else {
+                        alert('Por favor, introduce un año válido entre 2020 y 2050');
+                      }
+                    }}
+                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+                  >
+                    Crear Año
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowYearModal(false);
+                      setNewYearInput('');
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-semibold"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1411,7 +1564,7 @@ const CashFlowApp = () => {
               Dashboard
             </button>
             <h1 className="text-3xl font-bold text-gray-800">
-              {cashflowData.months[selectedMonth].name} 2025
+              {cashflowData.months[selectedMonth].name} {selectedYear}
             </h1>
           </div>
           <div className="flex gap-3">
