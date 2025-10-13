@@ -25,10 +25,72 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   name: { type: String, required: true },
   role: { type: String, enum: ['admin', 'user'], default: 'user' },
+  stripeCustomerId: { type: String, default: null },
+  revolutCustomerId: { type: String, default: null },
   createdAt: { type: Date, default: Date.now }
 });
 
 const User = mongoose.model('User', userSchema);
+
+// Subscription Schema
+const subscriptionSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  status: {
+    type: String,
+    enum: ['active', 'inactive', 'past_due', 'canceled', 'trial'],
+    default: 'trial'
+  },
+  plan: {
+    type: String,
+    enum: ['free', 'monthly', 'yearly'],
+    default: 'free'
+  },
+  paymentProvider: {
+    type: String,
+    enum: ['stripe', 'revolut', 'manual'],
+    default: null
+  },
+  stripeSubscriptionId: { type: String, default: null },
+  revolutSubscriptionId: { type: String, default: null },
+  currentPeriodStart: { type: Date, default: null },
+  currentPeriodEnd: { type: Date, default: null },
+  cancelAtPeriodEnd: { type: Boolean, default: false },
+  unpaidSince: { type: Date, default: null }, // For tracking 90-day restriction
+  isReadOnly: { type: Boolean, default: false }, // Read-only mode for unpaid users
+  trialEnd: { type: Date, default: null },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+subscriptionSchema.index({ userId: 1 }, { unique: true });
+
+const Subscription = mongoose.model('Subscription', subscriptionSchema);
+
+// Payment Schema
+const paymentSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  subscriptionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subscription', required: true },
+  amount: { type: Number, required: true },
+  currency: { type: String, default: 'EUR' },
+  status: {
+    type: String,
+    enum: ['pending', 'succeeded', 'failed', 'refunded'],
+    default: 'pending'
+  },
+  paymentProvider: {
+    type: String,
+    enum: ['stripe', 'revolut'],
+    required: true
+  },
+  paymentIntentId: { type: String, default: null }, // Stripe/Revolut payment ID
+  invoiceId: { type: String, default: null },
+  paymentMethod: { type: String, default: null }, // card, bank_transfer, etc
+  failureReason: { type: String, default: null },
+  paidAt: { type: Date, default: null },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const Payment = mongoose.model('Payment', paymentSchema);
 
 // CashFlow Data Schema
 const cashflowSchema = new mongoose.Schema({
@@ -175,6 +237,56 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+// Subscription Check Middleware
+const checkSubscription = async (req, res, next) => {
+  try {
+    // Skip subscription check for admins
+    if (req.user.role === 'admin') {
+      return next();
+    }
+
+    const subscription = await Subscription.findOne({ userId: req.user.userId });
+
+    if (!subscription) {
+      return res.status(403).json({
+        error: 'No subscription found',
+        code: 'NO_SUBSCRIPTION'
+      });
+    }
+
+    // Check if subscription is read-only (90-day unpaid grace period)
+    if (subscription.isReadOnly) {
+      // Allow GET requests (read-only)
+      if (req.method === 'GET') {
+        req.subscription = subscription;
+        return next();
+      }
+      // Block POST, PUT, DELETE (write operations)
+      return res.status(403).json({
+        error: 'Su cuenta está en modo solo lectura debido a impago. Tiene 90 días para regularizar su situación.',
+        code: 'READ_ONLY_MODE',
+        unpaidSince: subscription.unpaidSince,
+        daysRemaining: subscription.unpaidSince ? Math.max(0, 90 - Math.floor((Date.now() - subscription.unpaidSince) / (1000 * 60 * 60 * 24))) : 0
+      });
+    }
+
+    // Check if subscription is active or in trial
+    if (!['active', 'trial'].includes(subscription.status)) {
+      return res.status(403).json({
+        error: 'Suscripción inactiva',
+        code: 'INACTIVE_SUBSCRIPTION',
+        status: subscription.status
+      });
+    }
+
+    req.subscription = subscription;
+    next();
+  } catch (error) {
+    console.error('Error checking subscription:', error);
+    res.status(500).json({ error: 'Error al verificar suscripción' });
+  }
+};
+
 // ==================== AUTH ROUTES ====================
 
 // Register
@@ -218,6 +330,19 @@ app.post('/api/auth/register', async (req, res) => {
       isActive: true
     });
     await initialYear.save();
+
+    // Create initial subscription (30-day trial)
+    const trialEndDate = new Date();
+    trialEndDate.setDate(trialEndDate.now + 30);
+
+    const subscription = new Subscription({
+      userId: user._id,
+      status: 'trial',
+      plan: 'free',
+      trialEnd: trialEndDate,
+      isReadOnly: false
+    });
+    await subscription.save();
 
     res.status(201).json({
       message: 'Usuario registrado exitosamente',
@@ -820,6 +945,306 @@ app.delete('/api/documents/:id', authenticateToken, async (req, res) => {
 const chatgptRoutes = require('./routes/chatgpt.routes');
 app.use('/api/chatgpt', chatgptRoutes);
 
+// ==================== BILLING & SUBSCRIPTION ROUTES ====================
+
+// Get user subscription
+app.get('/api/billing/subscription', authenticateToken, async (req, res) => {
+  try {
+    const subscription = await Subscription.findOne({ userId: req.user.userId });
+    if (!subscription) {
+      return res.status(404).json({ error: 'Suscripción no encontrada' });
+    }
+    res.json(subscription);
+  } catch (error) {
+    console.error('Error getting subscription:', error);
+    res.status(500).json({ error: 'Error al obtener suscripción' });
+  }
+});
+
+// Get payment history
+app.get('/api/billing/payments', authenticateToken, async (req, res) => {
+  try {
+    const payments = await Payment.find({ userId: req.user.userId })
+      .populate('subscriptionId')
+      .sort({ createdAt: -1 });
+    res.json(payments);
+  } catch (error) {
+    console.error('Error getting payments:', error);
+    res.status(500).json({ error: 'Error al obtener historial de pagos' });
+  }
+});
+
+// Create Stripe checkout session
+app.post('/api/billing/stripe/create-checkout', authenticateToken, async (req, res) => {
+  try {
+    const { plan } = req.body; // 'monthly' or 'yearly'
+
+    // Get or create Stripe customer
+    const user = await User.findById(req.user.userId);
+    let customerId = user.stripeCustomerId;
+
+    if (!customerId) {
+      // TODO: Create Stripe customer via Stripe API
+      // const customer = await stripe.customers.create({ email: user.email });
+      // customerId = customer.id;
+      // user.stripeCustomerId = customerId;
+      // await user.save();
+      customerId = 'cus_mock_' + Date.now(); // Mock for now
+      user.stripeCustomerId = customerId;
+      await user.save();
+    }
+
+    // TODO: Create Stripe checkout session via Stripe API
+    // const session = await stripe.checkout.sessions.create({...});
+
+    // Mock response
+    const mockSession = {
+      id: 'cs_mock_' + Date.now(),
+      url: `https://checkout.stripe.com/pay/cs_mock_${Date.now()}`,
+      customer: customerId
+    };
+
+    res.json({ sessionId: mockSession.id, url: mockSession.url });
+  } catch (error) {
+    console.error('Error creating Stripe checkout:', error);
+    res.status(500).json({ error: 'Error al crear sesión de pago' });
+  }
+});
+
+// Create Revolut payment
+app.post('/api/billing/revolut/create-payment', authenticateToken, async (req, res) => {
+  try {
+    const { plan, amount } = req.body;
+
+    // Get or create Revolut customer
+    const user = await User.findById(req.user.userId);
+    let customerId = user.revolutCustomerId;
+
+    if (!customerId) {
+      // TODO: Create Revolut customer via Revolut API
+      customerId = 'rev_mock_' + Date.now(); // Mock for now
+      user.revolutCustomerId = customerId;
+      await user.save();
+    }
+
+    // TODO: Create Revolut payment via Revolut API
+
+    // Mock response
+    const mockPayment = {
+      id: 'rev_pay_' + Date.now(),
+      public_id: 'rev_public_' + Date.now(),
+      checkout_url: `https://checkout.revolut.com/${Date.now()}`
+    };
+
+    res.json({ paymentId: mockPayment.id, url: mockPayment.checkout_url });
+  } catch (error) {
+    console.error('Error creating Revolut payment:', error);
+    res.status(500).json({ error: 'Error al crear pago Revolut' });
+  }
+});
+
+// Stripe webhook
+app.post('/api/billing/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  try {
+    // TODO: Verify Stripe webhook signature
+    // const sig = req.headers['stripe-signature'];
+    // const event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+
+    const event = req.body; // Mock for now
+
+    switch (event.type) {
+      case 'checkout.session.completed':
+        // Handle successful checkout
+        await handleStripeCheckoutSuccess(event.data.object);
+        break;
+      case 'invoice.payment_failed':
+        // Handle payment failure
+        await handleStripePaymentFailed(event.data.object);
+        break;
+      case 'customer.subscription.deleted':
+        // Handle subscription cancellation
+        await handleStripeSubscriptionDeleted(event.data.object);
+        break;
+    }
+
+    res.json({ received: true });
+  } catch (error) {
+    console.error('Stripe webhook error:', error);
+    res.status(400).json({ error: 'Webhook error' });
+  }
+});
+
+// Revolut webhook
+app.post('/api/billing/revolut/webhook', express.json(), async (req, res) => {
+  try {
+    // TODO: Verify Revolut webhook signature
+
+    const event = req.body;
+
+    switch (event.event) {
+      case 'ORDER_COMPLETED':
+        // Handle successful payment
+        await handleRevolutPaymentSuccess(event.order);
+        break;
+      case 'ORDER_PAYMENT_FAILED':
+        // Handle payment failure
+        await handleRevolutPaymentFailed(event.order);
+        break;
+    }
+
+    res.json({ received: true });
+  } catch (error) {
+    console.error('Revolut webhook error:', error);
+    res.status(400).json({ error: 'Webhook error' });
+  }
+});
+
+// Cancel subscription
+app.post('/api/billing/subscription/cancel', authenticateToken, async (req, res) => {
+  try {
+    const subscription = await Subscription.findOne({ userId: req.user.userId });
+
+    if (!subscription) {
+      return res.status(404).json({ error: 'Suscripción no encontrada' });
+    }
+
+    // TODO: Cancel subscription in Stripe/Revolut
+    // if (subscription.stripeSubscriptionId) {
+    //   await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+    //     cancel_at_period_end: true
+    //   });
+    // }
+
+    subscription.cancelAtPeriodEnd = true;
+    subscription.status = 'canceled';
+    subscription.updatedAt = new Date();
+    await subscription.save();
+
+    res.json({ message: 'Suscripción cancelada exitosamente', subscription });
+  } catch (error) {
+    console.error('Error canceling subscription:', error);
+    res.status(500).json({ error: 'Error al cancelar suscripción' });
+  }
+});
+
+// Webhook handler helpers
+async function handleStripeCheckoutSuccess(session) {
+  // Find user by customer ID
+  const user = await User.findOne({ stripeCustomerId: session.customer });
+  if (!user) return;
+
+  // Update subscription
+  const subscription = await Subscription.findOne({ userId: user._id });
+  subscription.status = 'active';
+  subscription.stripeSubscriptionId = session.subscription;
+  subscription.paymentProvider = 'stripe';
+  subscription.currentPeriodStart = new Date();
+  subscription.currentPeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+  subscription.isReadOnly = false;
+  subscription.unpaidSince = null;
+  subscription.updatedAt = new Date();
+  await subscription.save();
+
+  // Create payment record
+  const payment = new Payment({
+    userId: user._id,
+    subscriptionId: subscription._id,
+    amount: session.amount_total / 100,
+    currency: session.currency.toUpperCase(),
+    status: 'succeeded',
+    paymentProvider: 'stripe',
+    paymentIntentId: session.payment_intent,
+    paidAt: new Date()
+  });
+  await payment.save();
+}
+
+async function handleStripePaymentFailed(invoice) {
+  const user = await User.findOne({ stripeCustomerId: invoice.customer });
+  if (!user) return;
+
+  const subscription = await Subscription.findOne({ userId: user._id });
+  subscription.status = 'past_due';
+  subscription.updatedAt = new Date();
+
+  // Start 90-day grace period
+  if (!subscription.unpaidSince) {
+    subscription.unpaidSince = new Date();
+    subscription.isReadOnly = true;
+  }
+
+  await subscription.save();
+
+  // Create failed payment record
+  const payment = new Payment({
+    userId: user._id,
+    subscriptionId: subscription._id,
+    amount: invoice.amount_due / 100,
+    currency: invoice.currency.toUpperCase(),
+    status: 'failed',
+    paymentProvider: 'stripe',
+    paymentIntentId: invoice.payment_intent,
+    failureReason: 'Payment failed'
+  });
+  await payment.save();
+}
+
+async function handleStripeSubscriptionDeleted(subscription) {
+  const user = await User.findOne({ stripeCustomerId: subscription.customer });
+  if (!user) return;
+
+  const userSubscription = await Subscription.findOne({ userId: user._id });
+  userSubscription.status = 'canceled';
+  userSubscription.stripeSubscriptionId = null;
+  userSubscription.updatedAt = new Date();
+  await userSubscription.save();
+}
+
+async function handleRevolutPaymentSuccess(order) {
+  // Similar to Stripe success handler
+  const user = await User.findOne({ revolutCustomerId: order.customer_id });
+  if (!user) return;
+
+  const subscription = await Subscription.findOne({ userId: user._id });
+  subscription.status = 'active';
+  subscription.revolutSubscriptionId = order.id;
+  subscription.paymentProvider = 'revolut';
+  subscription.currentPeriodStart = new Date();
+  subscription.currentPeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  subscription.isReadOnly = false;
+  subscription.unpaidSince = null;
+  subscription.updatedAt = new Date();
+  await subscription.save();
+
+  const payment = new Payment({
+    userId: user._id,
+    subscriptionId: subscription._id,
+    amount: order.order_amount.value / 100,
+    currency: order.order_amount.currency,
+    status: 'succeeded',
+    paymentProvider: 'revolut',
+    paymentIntentId: order.id,
+    paidAt: new Date()
+  });
+  await payment.save();
+}
+
+async function handleRevolutPaymentFailed(order) {
+  const user = await User.findOne({ revolutCustomerId: order.customer_id });
+  if (!user) return;
+
+  const subscription = await Subscription.findOne({ userId: user._id });
+  subscription.status = 'past_due';
+  subscription.updatedAt = new Date();
+
+  if (!subscription.unpaidSince) {
+    subscription.unpaidSince = new Date();
+    subscription.isReadOnly = true;
+  }
+
+  await subscription.save();
+}
+
 // ==================== ADMIN ROUTES ====================
 
 app.get('/api/admin/users', authenticateToken, async (req, res) => {
@@ -832,6 +1257,180 @@ app.get('/api/admin/users', authenticateToken, async (req, res) => {
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener usuarios' });
+  }
+});
+
+// Admin: Get all subscriptions
+app.get('/api/admin/billing/subscriptions', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Acceso denegado' });
+    }
+
+    const subscriptions = await Subscription.find()
+      .populate('userId', 'name email')
+      .sort({ createdAt: -1 });
+    res.json(subscriptions);
+  } catch (error) {
+    console.error('Error getting subscriptions:', error);
+    res.status(500).json({ error: 'Error al obtener suscripciones' });
+  }
+});
+
+// Admin: Get all payments
+app.get('/api/admin/billing/payments', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Acceso denegado' });
+    }
+
+    const payments = await Payment.find()
+      .populate('userId', 'name email')
+      .populate('subscriptionId')
+      .sort({ createdAt: -1 });
+    res.json(payments);
+  } catch (error) {
+    console.error('Error getting payments:', error);
+    res.status(500).json({ error: 'Error al obtener pagos' });
+  }
+});
+
+// Admin: Get billing stats
+app.get('/api/admin/billing/stats', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Acceso denegado' });
+    }
+
+    const totalSubscriptions = await Subscription.countDocuments();
+    const activeSubscriptions = await Subscription.countDocuments({ status: 'active' });
+    const trialSubscriptions = await Subscription.countDocuments({ status: 'trial' });
+    const pastDueSubscriptions = await Subscription.countDocuments({ status: 'past_due' });
+    const readOnlyAccounts = await Subscription.countDocuments({ isReadOnly: true });
+
+    const totalPayments = await Payment.countDocuments();
+    const successfulPayments = await Payment.countDocuments({ status: 'succeeded' });
+    const failedPayments = await Payment.countDocuments({ status: 'failed' });
+
+    // Calculate revenue
+    const revenueResult = await Payment.aggregate([
+      { $match: { status: 'succeeded' } },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    const totalRevenue = revenueResult.length > 0 ? revenueResult[0].total : 0;
+
+    // Revenue this month
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const monthRevenueResult = await Payment.aggregate([
+      { $match: { status: 'succeeded', createdAt: { $gte: startOfMonth } } },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    const monthRevenue = monthRevenueResult.length > 0 ? monthRevenueResult[0].total : 0;
+
+    res.json({
+      subscriptions: {
+        total: totalSubscriptions,
+        active: activeSubscriptions,
+        trial: trialSubscriptions,
+        pastDue: pastDueSubscriptions,
+        readOnly: readOnlyAccounts
+      },
+      payments: {
+        total: totalPayments,
+        successful: successfulPayments,
+        failed: failedPayments
+      },
+      revenue: {
+        total: totalRevenue,
+        thisMonth: monthRevenue
+      }
+    });
+  } catch (error) {
+    console.error('Error getting billing stats:', error);
+    res.status(500).json({ error: 'Error al obtener estadísticas' });
+  }
+});
+
+// Admin: Update user subscription
+app.put('/api/admin/billing/subscriptions/:userId', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Acceso denegado' });
+    }
+
+    const { userId } = req.params;
+    const { status, plan, isReadOnly } = req.body;
+
+    const subscription = await Subscription.findOne({ userId });
+    if (!subscription) {
+      return res.status(404).json({ error: 'Suscripción no encontrada' });
+    }
+
+    if (status) subscription.status = status;
+    if (plan) subscription.plan = plan;
+    if (typeof isReadOnly !== 'undefined') subscription.isReadOnly = isReadOnly;
+
+    // Reset unpaidSince if activating
+    if (status === 'active') {
+      subscription.unpaidSince = null;
+      subscription.isReadOnly = false;
+    }
+
+    subscription.updatedAt = new Date();
+    await subscription.save();
+
+    res.json({ message: 'Suscripción actualizada', subscription });
+  } catch (error) {
+    console.error('Error updating subscription:', error);
+    res.status(500).json({ error: 'Error al actualizar suscripción' });
+  }
+});
+
+// Admin: Force payment for user (manual payment)
+app.post('/api/admin/billing/manual-payment', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Acceso denegado' });
+    }
+
+    const { userId, amount, currency, notes } = req.body;
+
+    const subscription = await Subscription.findOne({ userId });
+    if (!subscription) {
+      return res.status(404).json({ error: 'Suscripción no encontrada' });
+    }
+
+    // Activate subscription
+    subscription.status = 'active';
+    subscription.paymentProvider = 'manual';
+    subscription.currentPeriodStart = new Date();
+    subscription.currentPeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    subscription.isReadOnly = false;
+    subscription.unpaidSince = null;
+    subscription.updatedAt = new Date();
+    await subscription.save();
+
+    // Create payment record
+    const payment = new Payment({
+      userId,
+      subscriptionId: subscription._id,
+      amount,
+      currency: currency || 'EUR',
+      status: 'succeeded',
+      paymentProvider: 'manual',
+      paymentMethod: 'manual',
+      failureReason: notes || 'Manual payment by admin',
+      paidAt: new Date()
+    });
+    await payment.save();
+
+    res.json({ message: 'Pago manual registrado', payment, subscription });
+  } catch (error) {
+    console.error('Error creating manual payment:', error);
+    res.status(500).json({ error: 'Error al registrar pago manual' });
   }
 });
 

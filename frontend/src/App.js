@@ -29,6 +29,7 @@ import AISettings from './pages/AISettings/AISettings';
 // Admin pages
 import AdminBackend from './pages/Admin/AdminBackend';
 import AdminUsers from './pages/Admin/AdminUsers';
+import AdminBilling from './pages/Admin/AdminBilling';
 import AdminDatabase from './pages/Admin/AdminDatabase';
 import AdminSecurity from './pages/Admin/AdminSecurity';
 
@@ -181,6 +182,14 @@ function AppContent() {
         element={
           <PrivateRoute>
             <Layout><AdminUsers /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/admin/billing"
+        element={
+          <PrivateRoute>
+            <Layout><AdminBilling /></Layout>
           </PrivateRoute>
         }
       />

@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Calendar, TrendingUp, Receipt, Tag,
   AlertCircle, BarChart3, FileText, Download, Settings,
   User, HelpCircle, ChevronLeft, Menu, X, Brain,
-  Server, Users, Database, Shield
+  Server, Users, Database, Shield, CreditCard
 } from 'lucide-react';
 import { useSidebar } from '../../contexts/SidebarContext';
 import './Sidebar.css';
@@ -46,6 +46,7 @@ const getSidebarSections = (user) => {
       items: [
         { icon: Server, label: "Backend", route: "/admin/backend" },
         { icon: Users, label: "Usuarios", route: "/admin/users" },
+        { icon: CreditCard, label: "Facturación", route: "/admin/billing" },
         { icon: Database, label: "Base de Datos", route: "/admin/database" },
         { icon: Shield, label: "Seguridad", route: "/admin/security" }
       ],
