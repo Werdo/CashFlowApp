@@ -14,9 +14,12 @@ const Analytics = () => {
     const fetchCashflowData = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token) return;
+        if (!token) {
+          setLoading(false);
+          return;
+        }
 
-        const response = await fetch(`${API_URL}/cashflow/${selectedYear}`, {
+        const response = await fetch(`${API_URL}/cashflow?year=${selectedYear}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -24,7 +27,10 @@ const Analytics = () => {
 
         if (response.ok) {
           const data = await response.json();
+          console.log('Analytics cashflow data loaded:', data);
           setCashflowData(data);
+        } else {
+          console.error('Analytics error response:', response.status);
         }
       } catch (error) {
         console.error('Error fetching cashflow data:', error);

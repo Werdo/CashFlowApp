@@ -24,9 +24,13 @@ const Transactions = () => {
     const fetchCashflowData = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token) return;
+        if (!token) {
+          setLoading(false);
+          return;
+        }
 
-        const response = await fetch(`${API_URL}/cashflow/2025`, {
+        const year = new Date().getFullYear();
+        const response = await fetch(`${API_URL}/cashflow?year=${year}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -34,7 +38,10 @@ const Transactions = () => {
 
         if (response.ok) {
           const data = await response.json();
+          console.log('Transactions cashflow data loaded:', data);
           setCashflowData(data);
+        } else {
+          console.error('Transactions error response:', response.status);
         }
       } catch (error) {
         console.error('Error fetching cashflow data:', error);

@@ -22,7 +22,7 @@ const Reports = () => {
         const token = localStorage.getItem('token');
         if (!token) return;
 
-        const response = await fetch(`${API_URL}/cashflow/${selectedYear}`, {
+        const response = await fetch(`${API_URL}/cashflow?year=${selectedYear}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -30,7 +30,10 @@ const Reports = () => {
 
         if (response.ok) {
           const data = await response.json();
+          console.log('Reports cashflow data loaded:', data);
           setCashflowData(data);
+        } else {
+          console.error('Reports error response:', response.status);
         }
       } catch (error) {
         console.error('Error fetching cashflow data:', error);
