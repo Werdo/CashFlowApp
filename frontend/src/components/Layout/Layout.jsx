@@ -9,7 +9,7 @@ const Layout = ({ children, user }) => {
 
   return (
     <div className="layout">
-      <Sidebar />
+      <Sidebar user={user} />
 
       <div
         className={`

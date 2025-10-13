@@ -4,52 +4,73 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Calendar, TrendingUp, Receipt, Tag,
   AlertCircle, BarChart3, FileText, Download, Settings,
-  User, HelpCircle, ChevronLeft, Menu, X, Brain
+  User, HelpCircle, ChevronLeft, Menu, X, Brain,
+  Server, Users, Database, Shield
 } from 'lucide-react';
 import { useSidebar } from '../../contexts/SidebarContext';
 import './Sidebar.css';
 
-const sidebarSections = [
-  {
-    title: "Principal",
-    items: [
-      { icon: LayoutDashboard, label: "Dashboard", route: "/" },
-      { icon: Calendar, label: "Calendario", route: "/calendar" },
-      { icon: TrendingUp, label: "Analytics", route: "/analytics" }
-    ]
-  },
-  {
-    title: "Gestión",
-    items: [
-      { icon: Receipt, label: "Transacciones", route: "/transactions" },
-      { icon: Tag, label: "Categorías", route: "/categories" },
-      { icon: AlertCircle, label: "Alertas", route: "/alerts" }
-    ]
-  },
-  {
-    title: "Reportes",
-    items: [
-      { icon: BarChart3, label: "Reportes", route: "/reports" },
-      { icon: FileText, label: "Documentos", route: "/documents" },
-      { icon: Download, label: "Exportar", route: "/export" },
-      { icon: Brain, label: "Análisis IA", route: "/ai-analysis" }
-    ]
-  },
-  {
+const getSidebarSections = (user) => {
+  const baseSections = [
+    {
+      title: "Principal",
+      items: [
+        { icon: LayoutDashboard, label: "Dashboard", route: "/" },
+        { icon: Calendar, label: "Calendario", route: "/calendar" },
+        { icon: TrendingUp, label: "Analytics", route: "/analytics" }
+      ]
+    },
+    {
+      title: "Gestión",
+      items: [
+        { icon: Receipt, label: "Transacciones", route: "/transactions" },
+        { icon: Tag, label: "Categorías", route: "/categories" },
+        { icon: AlertCircle, label: "Alertas", route: "/alerts" }
+      ]
+    },
+    {
+      title: "Reportes",
+      items: [
+        { icon: BarChart3, label: "Reportes", route: "/reports" },
+        { icon: FileText, label: "Documentos", route: "/documents" },
+        { icon: Download, label: "Exportar", route: "/export" },
+        { icon: Brain, label: "Análisis IA", route: "/ai-analysis" }
+      ]
+    }
+  ];
+
+  // Add admin section for admin users
+  if (user?.role === 'admin' || user?.isAdmin) {
+    baseSections.push({
+      title: "Administración",
+      items: [
+        { icon: Server, label: "Backend", route: "/admin/backend" },
+        { icon: Users, label: "Usuarios", route: "/admin/users" },
+        { icon: Database, label: "Base de Datos", route: "/admin/database" },
+        { icon: Shield, label: "Seguridad", route: "/admin/security" }
+      ],
+      requiresAdmin: true
+    });
+  }
+
+  baseSections.push({
     title: "Configuración",
     items: [
       { icon: Settings, label: "Ajustes", route: "/settings" },
       { icon: User, label: "Perfil", route: "/profile" },
       { icon: HelpCircle, label: "Ayuda", route: "/help" }
     ]
-  }
-];
+  });
 
-const Sidebar = () => {
+  return baseSections;
+};
+
+const Sidebar = ({ user }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isOpen, isExpanded, isMobile, toggleSidebar, closeSidebar } = useSidebar();
   const [customLogo, setCustomLogo] = React.useState(localStorage.getItem('app-logo'));
+  const sidebarSections = React.useMemo(() => getSidebarSections(user), [user]);
 
   // Listen for logo changes
   React.useEffect(() => {

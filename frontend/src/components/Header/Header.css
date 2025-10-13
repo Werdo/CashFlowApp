@@ -73,6 +73,9 @@
 .header-year-selector {
   position: relative;
   margin-left: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .header-year-btn {
@@ -91,6 +94,27 @@
   background-color: var(--background-tertiary);
   border-color: var(--primary-color);
   box-shadow: var(--elevation-1);
+}
+
+.header-year-manage-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--background-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.header-year-manage-btn:hover {
+  background-color: var(--primary-light);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  transform: scale(1.05);
 }
 
 .header-year-text {
@@ -166,6 +190,25 @@
   background-color: var(--primary-light);
   color: var(--primary-color);
   font-weight: var(--font-semibold);
+}
+
+.header-year-dropdown-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: var(--space-2) 0;
+}
+
+.header-year-dropdown-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  color: var(--primary-color);
+  font-weight: var(--font-semibold);
+}
+
+.header-year-dropdown-add:hover {
+  background-color: var(--primary-light);
 }
 
 /* ============================================
