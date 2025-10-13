@@ -750,6 +750,11 @@ table {
   border-color: var(--border-color);
 }
 
+/* White backgrounds - override with theme-aware colors */
+.bg-white {
+  background-color: var(--card-bg) !important;
+}
+
 /* ============================================
    PRINT STYLES
    ============================================ */
