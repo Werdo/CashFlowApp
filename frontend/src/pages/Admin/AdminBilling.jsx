@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, TrendingUp, Users, DollarSign, CheckCircle, XCircle, Clock, RefreshCw } from 'lucide-react';
+import { CreditCard, TrendingUp, Users, DollarSign, CheckCircle, XCircle, Clock, RefreshCw, Settings as SettingsIcon } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationContext';
 import API_URL from '../../config/api';
+import AdminBillingConfig from './AdminBillingConfig';
 import './AdminBilling.css';
 
 const AdminBilling = () => {
   const { success, error: notifyError } = useNotifications();
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' or 'config'
   const [stats, setStats] = useState(null);
   const [subscriptions, setSubscriptions] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [configs, setConfigs] = useState([]);
   const [showManualPaymentModal, setShowManualPaymentModal] = useState(false);
+  const [showSecrets, setShowSecrets] = useState({});
   const [selectedUser, setSelectedUser] = useState(null);
   const [manualPaymentData, setManualPaymentData] = useState({
     amount: '',
@@ -157,6 +161,30 @@ const AdminBilling = () => {
           Actualizar
         </button>
       </div>
+
+      {/* Tabs */}
+      <div className="billing-tabs">
+        <button
+          className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
+          onClick={() => setActiveTab('dashboard')}
+        >
+          <TrendingUp size={18} />
+          Dashboard
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'config' ? 'active' : ''}`}
+          onClick={() => setActiveTab('config')}
+        >
+          <SettingsIcon size={18} />
+          Configuración
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'config' ? (
+        <AdminBillingConfig />
+      ) : (
+        <div className="billing-dashboard">
 
       {/* Stats */}
       {stats && (
@@ -314,6 +342,9 @@ const AdminBilling = () => {
           </table>
         </div>
       </div>
+
+        </div>
+      )}
 
       {/* Manual Payment Modal */}
       {showManualPaymentModal && (

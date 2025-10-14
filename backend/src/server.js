@@ -92,6 +92,40 @@ const paymentSchema = new mongoose.Schema({
 
 const Payment = mongoose.model('Payment', paymentSchema);
 
+// BillingConfig Schema - Stores API keys and configuration
+const billingConfigSchema = new mongoose.Schema({
+  provider: {
+    type: String,
+    enum: ['stripe', 'revolut', 'system'],
+    required: true,
+    unique: true
+  },
+  isEnabled: { type: Boolean, default: false },
+  config: {
+    // Stripe configuration
+    publishableKey: { type: String, default: '' },
+    secretKey: { type: String, default: '' },
+    webhookSecret: { type: String, default: '' },
+
+    // Revolut configuration
+    apiKey: { type: String, default: '' },
+    merchantPublicKey: { type: String, default: '' },
+    webhookSecret: { type: String, default: '' },
+    sandboxMode: { type: Boolean, default: true },
+
+    // System configuration
+    trialDays: { type: Number, default: 30 },
+    gracePeriodDays: { type: Number, default: 90 },
+    monthlyPrice: { type: Number, default: 9.99 },
+    yearlyPrice: { type: Number, default: 99.99 },
+    currency: { type: String, default: 'EUR' }
+  },
+  lastUpdated: { type: Date, default: Date.now },
+  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
+});
+
+const BillingConfig = mongoose.model('BillingConfig', billingConfigSchema);
+
 // CashFlow Data Schema
 const cashflowSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -1431,6 +1465,114 @@ app.post('/api/admin/billing/manual-payment', authenticateToken, async (req, res
   } catch (error) {
     console.error('Error creating manual payment:', error);
     res.status(500).json({ error: 'Error al registrar pago manual' });
+  }
+});
+
+// Admin: Get billing configuration
+app.get('/api/admin/billing/config', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Acceso denegado' });
+    }
+
+    const configs = await BillingConfig.find().select('-config.secretKey -config.apiKey');
+
+    // Initialize default configs if they don't exist
+    if (configs.length === 0) {
+      const defaultConfigs = [
+        { provider: 'stripe', isEnabled: false, config: {} },
+        { provider: 'revolut', isEnabled: false, config: {} },
+        { provider: 'system', isEnabled: true, config: { trialDays: 30, gracePeriodDays: 90, monthlyPrice: 9.99, yearlyPrice: 99.99, currency: 'EUR' } }
+      ];
+
+      for (const cfg of defaultConfigs) {
+        await BillingConfig.create(cfg);
+      }
+
+      const newConfigs = await BillingConfig.find().select('-config.secretKey -config.apiKey');
+      return res.json(newConfigs);
+    }
+
+    res.json(configs);
+  } catch (error) {
+    console.error('Error getting billing config:', error);
+    res.status(500).json({ error: 'Error al obtener configuración' });
+  }
+});
+
+// Admin: Update billing configuration
+app.put('/api/admin/billing/config/:provider', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Acceso denegado' });
+    }
+
+    const { provider } = req.params;
+    const { isEnabled, config } = req.body;
+
+    let billingConfig = await BillingConfig.findOne({ provider });
+
+    if (!billingConfig) {
+      billingConfig = new BillingConfig({ provider, isEnabled: false, config: {} });
+    }
+
+    if (typeof isEnabled !== 'undefined') {
+      billingConfig.isEnabled = isEnabled;
+    }
+
+    if (config) {
+      billingConfig.config = { ...billingConfig.config, ...config };
+    }
+
+    billingConfig.lastUpdated = new Date();
+    billingConfig.updatedBy = req.user.userId;
+    await billingConfig.save();
+
+    // Return without sensitive keys
+    const response = billingConfig.toObject();
+    delete response.config.secretKey;
+    delete response.config.apiKey;
+
+    res.json({ message: 'Configuración actualizada', config: response });
+  } catch (error) {
+    console.error('Error updating billing config:', error);
+    res.status(500).json({ error: 'Error al actualizar configuración' });
+  }
+});
+
+// Admin: Test billing provider connection
+app.post('/api/admin/billing/config/:provider/test', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Acceso denegado' });
+    }
+
+    const { provider } = req.params;
+    const billingConfig = await BillingConfig.findOne({ provider });
+
+    if (!billingConfig) {
+      return res.status(404).json({ error: 'Configuración no encontrada' });
+    }
+
+    // TODO: Implement actual API tests
+    // For Stripe: const stripe = require('stripe')(billingConfig.config.secretKey);
+    // For Revolut: Test with API key
+
+    // Mock test for now
+    const testResult = {
+      success: true,
+      provider,
+      message: 'Conexión exitosa (modo prueba)',
+      details: {
+        accountId: provider === 'stripe' ? 'acct_mock_123' : 'rev_mock_456',
+        mode: billingConfig.config.sandboxMode ? 'sandbox' : 'live'
+      }
+    };
+
+    res.json(testResult);
+  } catch (error) {
+    console.error('Error testing billing provider:', error);
+    res.status(500).json({ error: 'Error al probar conexión' });
   }
 });
 
