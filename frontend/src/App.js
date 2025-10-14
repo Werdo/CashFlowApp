@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { ThemeConfigProvider } from './contexts/ThemeConfigContext';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import Layout from './components/Layout/Layout';
@@ -21,6 +22,7 @@ import Reports from './pages/Reports/Reports';
 import Documents from './pages/Documents/Documents';
 import Export from './pages/Export/Export';
 import Settings from './pages/Settings/Settings';
+import Appearance from './pages/Settings/Appearance';
 import Profile from './pages/Profile/Profile';
 import Help from './pages/Help/Help';
 import AIAnalysis from './pages/AIAnalysis/AIAnalysis';
@@ -28,7 +30,7 @@ import AISettings from './pages/AISettings/AISettings';
 
 // Admin pages
 import AdminBackend from './pages/Admin/AdminBackend';
-import AdminUsers from './pages/Admin/AdminUsers';
+import AdminUsersEnhanced from './pages/Admin/AdminUsersEnhanced';
 import AdminBilling from './pages/Admin/AdminBilling';
 import AdminDatabase from './pages/Admin/AdminDatabase';
 import AdminSecurity from './pages/Admin/AdminSecurity';
@@ -36,14 +38,16 @@ import AdminSecurity from './pages/Admin/AdminSecurity';
 function App() {
   return (
     <ThemeProvider>
-      <NotificationProvider>
-        <SidebarProvider>
-          <Router>
-            <AppContent />
-          </Router>
-          <NotificationContainer />
-        </SidebarProvider>
-      </NotificationProvider>
+      <ThemeConfigProvider>
+        <NotificationProvider>
+          <SidebarProvider>
+            <Router>
+              <AppContent />
+            </Router>
+            <NotificationContainer />
+          </SidebarProvider>
+        </NotificationProvider>
+      </ThemeConfigProvider>
     </ThemeProvider>
   );
 }
@@ -136,6 +140,14 @@ function AppContent() {
         }
       />
       <Route
+        path="/settings/appearance"
+        element={
+          <PrivateRoute>
+            <Layout><Appearance /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
         path="/profile"
         element={
           <PrivateRoute>
@@ -181,7 +193,7 @@ function AppContent() {
         path="/admin/users"
         element={
           <PrivateRoute>
-            <Layout><AdminUsers /></Layout>
+            <Layout><AdminUsersEnhanced /></Layout>
           </PrivateRoute>
         }
       />

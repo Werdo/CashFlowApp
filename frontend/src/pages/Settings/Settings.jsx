@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -268,12 +269,14 @@ const Settings = () => {
     }
   };
 
+  const navigate = useNavigate();
+
   const tabs = [
     { id: 'profile', label: 'Perfil', icon: User },
     { id: 'notifications', label: 'Notificaciones', icon: Bell },
     { id: 'security', label: 'Seguridad', icon: Lock },
     { id: 'ai', label: 'Configuración IA', icon: Globe },
-    { id: 'appearance', label: 'Apariencia', icon: Palette },
+    { id: 'appearance', label: 'Apariencia', icon: Palette, route: '/settings/appearance' },
     { id: 'data', label: 'Gestión de Datos', icon: Globe },
     { id: 'preferences', label: 'Preferencias', icon: Globe },
   ];
@@ -294,7 +297,13 @@ const Settings = () => {
               <button
                 key={tab.id}
                 className={`settings-tab ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  if (tab.route) {
+                    navigate(tab.route);
+                  } else {
+                    setActiveTab(tab.id);
+                  }
+                }}
               >
                 <Icon size={18} />
                 <span>{tab.label}</span>

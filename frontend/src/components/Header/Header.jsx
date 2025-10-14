@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, Bell, Search, User, ChevronDown, Settings as SettingsIcon, Plus } from 'lucide-react';
+import { Menu, Bell, Search, User, ChevronDown, Settings as SettingsIcon, Plus, Download, BarChart3, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { useThemeConfig } from '../../contexts/ThemeConfigContext';
 import ThemeToggle from '../ThemeToggle/ThemeToggle';
 import API_URL from '../../config/api';
 import './Header.css';
@@ -12,22 +13,35 @@ const Header = ({ user }) => {
   const navigate = useNavigate();
   const { isMobile, openSidebar, toggleSidebar } = useSidebar();
   const { notifications: notificationsList } = useNotifications();
+  const { config } = useThemeConfig();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [appTitle, setAppTitle] = useState(() => localStorage.getItem('app-title') || 'CashFlow');
+  const [appTitle, setAppTitle] = useState(() => config.appTitle || localStorage.getItem('app-title') || 'CashFlow');
+  const [appSubtitle, setAppSubtitle] = useState(() => config.appSubtitle || localStorage.getItem('app-subtitle') || 'Dashboard');
   const [selectedYear, setSelectedYear] = useState(() => localStorage.getItem('selected-year') || new Date().getFullYear());
   const [showYearDropdown, setShowYearDropdown] = useState(false);
   const [availableYears, setAvailableYears] = useState([]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
-  // Listen for changes to app title from Settings
+  // Listen for changes to app title and subtitle from Settings
   useEffect(() => {
     const handleStorageChange = () => {
-      setAppTitle(localStorage.getItem('app-title') || 'CashFlow');
+      const themeConfig = localStorage.getItem('theme-config');
+      if (themeConfig) {
+        const parsed = JSON.parse(themeConfig);
+        setAppTitle(parsed.appTitle || 'CashFlow');
+        setAppSubtitle(parsed.appSubtitle || 'Dashboard');
+      }
     };
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
+
+  // Sync with ThemeConfig context
+  useEffect(() => {
+    if (config.appTitle) setAppTitle(config.appTitle);
+    if (config.appSubtitle) setAppSubtitle(config.appSubtitle);
+  }, [config]);
 
   // Load available years from API
   useEffect(() => {
@@ -124,10 +138,7 @@ const Header = ({ user }) => {
           )}
         </AnimatePresence>
 
-        {/* Page Title */}
-        <h1 className="header-title">{appTitle}</h1>
-
-        {/* Year Selector */}
+        {/* Year Selector (moved to left, before title) */}
         <div className="header-year-selector">
           <button
             className="header-year-btn"
@@ -137,16 +148,6 @@ const Header = ({ user }) => {
           >
             <span className="header-year-text">{selectedYear}</span>
             <ChevronDown size={16} className={`header-year-chevron ${showYearDropdown ? 'open' : ''}`} />
-          </button>
-
-          {/* Manage Years Button */}
-          <button
-            className="header-year-manage-btn"
-            onClick={() => navigate('/settings')}
-            aria-label="Manage years"
-            title="Gestionar años"
-          >
-            <SettingsIcon size={16} />
           </button>
 
           {/* Year Dropdown */}
@@ -189,26 +190,51 @@ const Header = ({ user }) => {
             )}
           </AnimatePresence>
         </div>
+
+        {/* Page Title and Subtitle (configurable) */}
+        <div className="header-title-section">
+          <h1 className="header-title">{appTitle}</h1>
+          <p className="header-subtitle">{appSubtitle}</p>
+        </div>
       </div>
 
       <div className="header-right">
-        {/* Search Button */}
+        {/* Small icon buttons */}
         <button
-          className="header-icon-btn"
-          aria-label="Search"
-          title="Search"
+          className="header-icon-btn-small"
+          onClick={() => navigate('/export')}
+          aria-label="Exportar"
+          title="Exportar datos"
         >
-          <Search size={20} />
+          <Download size={18} />
+        </button>
+
+        <button
+          className="header-icon-btn-small"
+          onClick={() => navigate('/analytics')}
+          aria-label="Gráficos"
+          title="Ver gráficos y analytics"
+        >
+          <BarChart3 size={18} />
+        </button>
+
+        <button
+          className="header-icon-btn-small"
+          onClick={() => navigate('/reports')}
+          aria-label="Reportes"
+          title="Ver reportes"
+        >
+          <FileText size={18} />
         </button>
 
         {/* Notifications */}
         <button
-          className="header-icon-btn header-notification-btn"
+          className="header-icon-btn-small header-notification-btn"
           onClick={() => navigate('/alerts')}
           aria-label="Notifications"
           title="Notificaciones"
         >
-          <Bell size={20} />
+          <Bell size={18} />
           {unreadNotifications > 0 && (
             <span className="header-notification-badge">
               {unreadNotifications > 99 ? '99+' : unreadNotifications}
