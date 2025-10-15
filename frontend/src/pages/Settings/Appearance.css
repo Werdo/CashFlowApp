@@ -317,6 +317,121 @@
   border-color: var(--facit-text-secondary);
 }
 
+/* Logo Section */
+.logo-section {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--facit-spacer-6);
+  align-items: start;
+}
+
+.logo-upload-area {
+  background: var(--facit-bg-secondary);
+  border: 2px dashed var(--facit-border-color);
+  border-radius: var(--facit-border-radius-lg);
+  padding: var(--facit-spacer-6);
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.logo-upload-area:hover {
+  border-color: var(--facit-primary);
+  background: var(--facit-bg-tertiary);
+}
+
+.logo-upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--facit-spacer-3);
+  cursor: pointer;
+  text-align: center;
+  color: var(--facit-text-secondary);
+}
+
+.logo-upload-label:hover {
+  color: var(--facit-primary);
+}
+
+.logo-hint {
+  font-size: var(--facit-font-size-sm);
+  opacity: 0.7;
+}
+
+.logo-input-hidden {
+  display: none;
+}
+
+.logo-preview-container {
+  position: relative;
+  max-width: 100%;
+}
+
+.logo-preview-image {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+}
+
+.logo-remove-btn {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: var(--facit-danger);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--facit-shadow-md);
+  transition: all 0.3s ease;
+}
+
+.logo-remove-btn:hover {
+  background: var(--facit-danger-dark);
+  transform: scale(1.1);
+}
+
+.logo-info {
+  background: var(--facit-bg-secondary);
+  padding: var(--facit-spacer-4);
+  border-radius: var(--facit-border-radius-lg);
+}
+
+.logo-info h3 {
+  font-size: var(--facit-font-size-base);
+  margin-bottom: var(--facit-spacer-3);
+  color: var(--facit-text-primary);
+}
+
+.logo-info ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.logo-info li {
+  padding: var(--facit-spacer-2) 0;
+  font-size: var(--facit-font-size-sm);
+  color: var(--facit-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--facit-spacer-2);
+}
+
+.logo-info li::before {
+  content: '✓';
+  color: var(--facit-success);
+  font-weight: bold;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .appearance-page {
@@ -330,6 +445,10 @@
   }
 
   .color-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .logo-section {
     grid-template-columns: 1fr;
   }
 

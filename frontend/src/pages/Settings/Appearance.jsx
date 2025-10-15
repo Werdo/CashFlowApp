@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, RefreshCw, Eye, Palette } from 'lucide-react';
+import { Save, RefreshCw, Eye, Palette, Upload, X } from 'lucide-react';
 import { useThemeConfig } from '../../contexts/ThemeConfigContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import './Appearance.css';
@@ -10,6 +10,8 @@ const Appearance = () => {
 
   const [localConfig, setLocalConfig] = useState(config);
   const [previewMode, setPreviewMode] = useState(false);
+  const [logo, setLogo] = useState(() => localStorage.getItem('app-logo') || null);
+  const [logoPreview, setLogoPreview] = useState(null);
 
   useEffect(() => {
     setLocalConfig(config);
@@ -42,6 +44,42 @@ const Appearance = () => {
       updateConfig(config);
     }
     setPreviewMode(!previewMode);
+  };
+
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      notifyError('Por favor selecciona una imagen válida');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      notifyError('La imagen debe ser menor a 2MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result;
+      setLogo(base64);
+      setLogoPreview(base64);
+      localStorage.setItem('app-logo', base64);
+      window.dispatchEvent(new Event('storage'));
+      success('Logo actualizado correctamente');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleLogoRemove = () => {
+    setLogo(null);
+    setLogoPreview(null);
+    localStorage.removeItem('app-logo');
+    window.dispatchEvent(new Event('storage'));
+    success('Logo eliminado');
   };
 
   return (
@@ -173,6 +211,52 @@ const Appearance = () => {
                   style={{ backgroundColor: localConfig.textColor }}
                 />
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Logo Section */}
+        <div className="appearance-section">
+          <h2 className="section-title">Logo de la Aplicación</h2>
+          <div className="logo-section">
+            <div className="logo-upload-area">
+              {(logo || logoPreview) ? (
+                <div className="logo-preview-container">
+                  <img
+                    src={logoPreview || logo}
+                    alt="Logo"
+                    className="logo-preview-image"
+                  />
+                  <button
+                    className="logo-remove-btn"
+                    onClick={handleLogoRemove}
+                    title="Eliminar logo"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              ) : (
+                <label className="logo-upload-label">
+                  <Upload size={32} />
+                  <span>Haz clic para subir tu logo</span>
+                  <span className="logo-hint">PNG, JPG o SVG (máx. 2MB)</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="logo-input-hidden"
+                  />
+                </label>
+              )}
+            </div>
+            <div className="logo-info">
+              <h3>Recomendaciones:</h3>
+              <ul>
+                <li>Tamaño recomendado: 200x60 píxeles</li>
+                <li>Fondo transparente (PNG)</li>
+                <li>Formato: PNG, JPG o SVG</li>
+                <li>Tamaño máximo: 2MB</li>
+              </ul>
             </div>
           </div>
         </div>

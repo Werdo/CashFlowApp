@@ -1219,73 +1219,9 @@ const CashFlowApp = () => {
         {renderTooltip()}
         <div className="max-w-7xl mx-auto p-6">
           <div className="flex justify-between items-center mb-8">
-            <div className="flex items-center gap-4">
-              <div>
-                <h1 className="text-4xl font-bold text-gray-800 mb-2">Dashboard CashFlow {selectedYear}</h1>
-                <p className="text-gray-600">Versión 3.0 - Mobile First + AI</p>
-              </div>
-              <div className="flex gap-2 items-center">
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                  className="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg text-lg font-semibold text-gray-800 hover:border-blue-500 focus:outline-none focus:border-blue-500 shadow-sm"
-                >
-                  {availableYears.map(yearObj => (
-                    <option key={yearObj.year} value={yearObj.year}>
-                      {yearObj.year}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={() => setShowYearModal(true)}
-                  className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 shadow-lg text-lg font-bold"
-                  title="Crear nuevo año"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-            <div className="flex gap-3 items-center">
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 flex items-center gap-2 shadow-lg relative"
-              >
-                <Bell size={20} />
-                Notificaciones
-                {getTodayNotifications().length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
-                    {getTodayNotifications().length}
-                  </span>
-                )}
-              </button>
-              <button
-                onClick={exportData}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2 shadow-lg"
-              >
-                <Upload size={20} />
-                Exportar
-              </button>
-              <button
-                onClick={() => setShowGraphs(!showGraphs)}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center gap-2 shadow-lg"
-              >
-                <BarChart3 size={20} />
-                {showGraphs ? 'Ocultar' : 'Ver'} Gráficos
-              </button>
-              <button
-                onClick={() => setShowGroupedExpenses(!showGroupedExpenses)}
-                className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 flex items-center gap-2 shadow-lg"
-              >
-                <Tag size={20} />
-                {showGroupedExpenses ? 'Ocultar' : 'Ver'} Gastos Agrupados
-              </button>
-              <button
-                onClick={() => setCurrentView('calendar')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 shadow-lg"
-              >
-                <CalendarDays size={20} />
-                Vista Calendario
-              </button>
+            <div>
+              <h1 className="text-4xl font-bold text-gray-800 mb-2">Dashboard CashFlow {selectedYear}</h1>
+              <p className="text-gray-600">Versión 3.0 - Mobile First + AI</p>
             </div>
           </div>
 
@@ -1566,22 +1502,6 @@ const CashFlowApp = () => {
             <h1 className="text-3xl font-bold text-gray-800">
               {cashflowData.months[selectedMonth].name} {selectedYear}
             </h1>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowDailyCash(!showDailyCash)}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2"
-            >
-              <TrendingUp size={20} />
-              {showDailyCash ? 'Ocultar' : 'Ver'} Caja Diaria
-            </button>
-            <button
-              onClick={exportData}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2"
-            >
-              <Upload size={20} />
-              Exportar
-            </button>
           </div>
         </div>
 
