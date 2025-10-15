@@ -1,7 +1,7 @@
 {
-  "name": "cashflow-backend-v3",
-  "version": "3.0.0",
-  "description": "CashFlow v3.0 API Backend with ChatGPT Integration",
+  "name": "cashflow-backend-v4",
+  "version": "4.0.0",
+  "description": "CashFlow v4.0 API Backend - Production Release with Full Features",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

@@ -1,36 +1,69 @@
-# 💰 CashFlow v3.0 - Gestión Inteligente de Tesorería
+# 💰 CashFlow v4.0 - Gestión Inteligente de Tesorería
 
-**Versión:** 3.0.0-alpha
-**Base:** v2.5
-**Estado:** Desarrollo Inicial
-**Última Actualización:** 05 de Octubre de 2025
+**Versión:** 4.0.0 - Release
+**Base:** v3.0
+**Estado:** ✅ Producción
+**Última Actualización:** 15 de Octubre de 2025
 
 ---
 
 ## 🎯 Descripción
 
-CashFlow v3.0 es un sistema avanzado de gestión de tesorería con capacidades de inteligencia, automatización y análisis predictivo. Construido sobre las bases sólidas de v2.5, esta versión introduce funcionalidades enterprise-ready enfocadas en reducir el trabajo manual y proporcionar insights valiosos.
+CashFlow v4.0 es un sistema completo de gestión de tesorería enterprise-ready con arquitectura modular, diseño profesional y funcionalidades avanzadas. Esta versión RELEASE incluye todas las características implementadas y probadas en producción.
 
-## ✨ Novedades v3.0 (Planificadas)
+## ✨ Funcionalidades v4.0 Release
 
-### **🔔 Sistema de Notificaciones Inteligentes**
-- Notificaciones push y email
-- Alertas de anomalías automáticas
-- Resúmenes programados
+### **🎯 Core Features**
+- ✅ Multi-usuario con autenticación JWT
+- ✅ Gestión de múltiples años fiscales
+- ✅ Auto-guardado inteligente con debounce
+- ✅ Sistema de auditoría completo
+- ✅ Historial de modificaciones por usuario
+- ✅ API REST completa y documentada
 
-### **📊 Dashboard Configurable**
-- Widgets arrastrables
-- Layouts personalizables
-- 10+ widgets disponibles
+### **💼 Gestión Financiera**
+- ✅ Ingresos y gastos (fijos/variables)
+- ✅ Items recurrentes automáticos
+- ✅ Gastos agrupados por etiquetas (#hashtags)
+- ✅ Vista de caja día a día
+- ✅ Alertas configurables
+- ✅ Calendario anual interactivo
+- ✅ Drag & drop de items
 
-### **📈 Analytics Avanzados**
-- Reportes interactivos
-- Comparativas año a año
-- Predicciones con IA
+### **📊 Analytics & Reporting**
+- ✅ Dashboard con métricas en tiempo real
+- ✅ Gráficos interactivos (Bar, Area Charts)
+- ✅ Resumen trimestral y anual
+- ✅ Exportación a JSON
+- ✅ Posición de caja acumulada
+- ✅ Notificaciones del día
+
+### **🎨 UI/UX Professional**
+- ✅ Diseño moderno con Tailwind CSS
+- ✅ Logo personalizable por empresa
+- ✅ Interfaz optimizada y limpia
+- ✅ Componentes reutilizables
+- ✅ Layout profesional con sidebar
+- ✅ Save indicator en tiempo real
+
+### **⚙️ Sistema de Administración**
+- ✅ Panel de administración completo
+- ✅ Gestión de usuarios
+- ✅ Sistema de billing y suscripciones
+- ✅ Configuración de appearance
+- ✅ Roles y permisos
+
+### **🐳 DevOps & Deployment**
+- ✅ Totalmente dockerizado
+- ✅ Nginx reverse proxy con SSL
+- ✅ MongoDB 7.0 optimizado
+- ✅ Scripts de deploy automáticos
+- ✅ Health checks configurados
+- ✅ Environment-aware API config
 
 ---
 
-## 🏆 Funcionalidades Actuales (v2.5)
+## 🏆 Arquitectura v4.0
 
 Aplicación completa de gestión de cashflow con:
 - ✅ Multi-usuario con JWT
