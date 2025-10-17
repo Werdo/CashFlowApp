@@ -21,7 +21,17 @@ export default function Layout({ user, onLogout, children }: LayoutProps) {
     { id: 'settings', path: '/settings', name: 'Configuración', icon: '⚙️' },
   ];
 
+  const adminMenuItems = [
+    { id: 'admin-clients', path: '/admin/clients', name: 'Clientes', icon: '👥', description: 'Gestión de clientes y jerarquía' },
+    { id: 'admin-articles', path: '/admin/articles', name: 'Artículos', icon: '📦', description: 'Catálogo de productos' },
+    { id: 'admin-warehouses', path: '/admin/warehouses', name: 'Almacenes', icon: '🏭', description: 'Gestión de almacenes' },
+    { id: 'admin-stock', path: '/admin/stock', name: 'Stock', icon: '📊', description: 'Control de inventario' },
+    { id: 'admin-lots', path: '/admin/lots', name: 'Lotes', icon: '🏷️', description: 'Trazabilidad de lotes' },
+    { id: 'admin-users', path: '/admin/users', name: 'Usuarios', icon: '👤', description: 'Gestión de usuarios' },
+  ];
+
   const isActive = (path: string) => location.pathname.startsWith(path);
+  const isAdmin = user?.role === 'admin';
 
   return (
     <div className="d-flex" style={{ height: '100vh' }}>
@@ -59,7 +69,29 @@ export default function Layout({ user, onLogout, children }: LayoutProps) {
               </Link>
             ))}
 
-            <hr className="bg-secondary" />
+            {isAdmin && (
+              <>
+                <hr className="bg-secondary my-3" />
+                <div className="px-2 mb-2">
+                  <small className="text-muted fw-bold text-uppercase" style={{ fontSize: '0.7rem' }}>
+                    Administración Backend
+                  </small>
+                </div>
+                {adminMenuItems.map((item) => (
+                  <Link
+                    key={item.id}
+                    to={item.path}
+                    className={`nav-link text-white text-decoration-none ${isActive(item.path) ? 'bg-danger rounded' : ''}`}
+                    title={item.description}
+                  >
+                    <span className="me-2">{item.icon}</span>
+                    {item.name}
+                  </Link>
+                ))}
+              </>
+            )}
+
+            <hr className="bg-secondary mt-3" />
 
             <a
               href="#"
@@ -84,8 +116,25 @@ export default function Layout({ user, onLogout, children }: LayoutProps) {
             <div className="d-flex justify-content-between align-items-center">
               <div>
                 <h5 className="mb-0">
-                  {menuItems.find(item => isActive(item.path))?.icon}{' '}
-                  {menuItems.find(item => isActive(item.path))?.name || 'AssetFlow'}
+                  {(() => {
+                    const currentMenuItem = menuItems.find(item => isActive(item.path));
+                    const currentAdminItem = isAdmin ? adminMenuItems.find(item => isActive(item.path)) : null;
+
+                    if (currentAdminItem) {
+                      return (
+                        <>
+                          {currentAdminItem.icon} {currentAdminItem.name}
+                          <span className="badge bg-danger ms-2" style={{ fontSize: '0.6rem' }}>ADMIN</span>
+                        </>
+                      );
+                    }
+
+                    return (
+                      <>
+                        {currentMenuItem?.icon} {currentMenuItem?.name || 'AssetFlow'}
+                      </>
+                    );
+                  })()}
                 </h5>
                 <small className="text-muted">Bienvenido, {user?.name}</small>
               </div>
