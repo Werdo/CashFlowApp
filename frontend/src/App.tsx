@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { ThemeProvider } from './contexts/ThemeContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import AssetsModule from './pages/modules/AssetsModule';
@@ -8,6 +10,7 @@ import MovementsModule from './pages/modules/MovementsModule';
 import DepositModule from './pages/modules/DepositModule';
 import ReportsModule from './pages/modules/ReportsModule';
 import InvoicingModule from './pages/modules/InvoicingModule';
+import Settings from './pages/Settings';
 import Layout from './components/Layout';
 
 function App() {
@@ -25,25 +28,34 @@ function App() {
   };
 
   if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
+    return (
+      <>
+        <Toaster position="top-right" />
+        <Login onLogin={handleLogin} />
+      </>
+    );
   }
 
   return (
-    <BrowserRouter>
-      <Layout user={user} onLogout={handleLogout}>
-        <Routes>
-          <Route path="/" element={<Dashboard user={user} />} />
-          <Route path="/dashboard" element={<Dashboard user={user} />} />
-          <Route path="/assets/*" element={<AssetsModule />} />
-          <Route path="/maintenance/*" element={<MaintenanceModule />} />
-          <Route path="/movements/*" element={<MovementsModule />} />
-          <Route path="/deposit/*" element={<DepositModule />} />
-          <Route path="/reports/*" element={<ReportsModule />} />
-          <Route path="/invoicing/*" element={<InvoicingModule />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Layout>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <Toaster position="top-right" />
+        <Layout user={user} onLogout={handleLogout}>
+          <Routes>
+            <Route path="/" element={<Dashboard user={user} />} />
+            <Route path="/dashboard" element={<Dashboard user={user} />} />
+            <Route path="/assets/*" element={<AssetsModule />} />
+            <Route path="/maintenance/*" element={<MaintenanceModule />} />
+            <Route path="/movements/*" element={<MovementsModule />} />
+            <Route path="/deposit/*" element={<DepositModule />} />
+            <Route path="/reports/*" element={<ReportsModule />} />
+            <Route path="/invoicing/*" element={<InvoicingModule />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Layout>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 

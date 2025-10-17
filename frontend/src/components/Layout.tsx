@@ -18,6 +18,7 @@ export default function Layout({ user, onLogout, children }: LayoutProps) {
     { id: 'deposit', path: '/deposit', name: 'Depósito', icon: '🏢' },
     { id: 'reports', path: '/reports', name: 'Reportes', icon: '📈' },
     { id: 'invoicing', path: '/invoicing', name: 'Facturación', icon: '💰' },
+    { id: 'settings', path: '/settings', name: 'Configuración', icon: '⚙️' },
   ];
 
   const isActive = (path: string) => location.pathname.startsWith(path);
@@ -28,7 +29,7 @@ export default function Layout({ user, onLogout, children }: LayoutProps) {
       <div className="bg-dark text-white" style={{ width: '250px', overflowY: 'auto' }}>
         <div className="p-4">
           <h4 className="fw-bold mb-0">AssetFlow</h4>
-          <small className="text-muted">v2.0.0</small>
+          <small className="text-muted">v2.1.0</small>
         </div>
 
         <div className="px-3">
