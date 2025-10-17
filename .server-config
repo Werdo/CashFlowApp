@@ -1,0 +1,4 @@
+SERVER_IP=167.235.58.24
+SERVER_USER=admin
+SERVER_PASS=bb474edf
+SERVER_DIR=/var/www/assetflow

@@ -1,0 +1,83 @@
+# AssetFlow - Comandos Manuales de Configuración del Servidor
+# Ejecuta estos comandos UNO POR UNO en el servidor
+
+# =============================================================================
+# PASO 1: ACTUALIZAR SISTEMA
+# =============================================================================
+sudo apt update
+sudo apt upgrade -y
+
+# =============================================================================
+# PASO 2: INSTALAR HERRAMIENTAS BÁSICAS
+# =============================================================================
+sudo apt install -y curl wget git vim nano htop net-tools ca-certificates gnupg lsb-release software-properties-common apt-transport-https
+
+# =============================================================================
+# PASO 3: INSTALAR DOCKER
+# =============================================================================
+# Añadir clave GPG de Docker
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+# Configurar repositorio
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Instalar Docker
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Añadir usuario al grupo docker
+sudo usermod -aG docker $USER
+
+# =============================================================================
+# PASO 4: INSTALAR DOCKER COMPOSE
+# =============================================================================
+DOCKER_COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep 'tag_name' | cut -d\" -f4)
+sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+# =============================================================================
+# PASO 5: INSTALAR NODE.JS 18
+# =============================================================================
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# =============================================================================
+# PASO 6: CONFIGURAR FIREWALL
+# =============================================================================
+sudo apt install -y ufw
+sudo ufw allow 22/tcp comment 'SSH'
+sudo ufw allow 80/tcp comment 'HTTP'
+sudo ufw allow 443/tcp comment 'HTTPS'
+sudo ufw allow 3000/tcp comment 'React Dev'
+sudo ufw allow 5000/tcp comment 'Backend API'
+echo "y" | sudo ufw enable
+
+# =============================================================================
+# PASO 7: CREAR DIRECTORIOS DEL PROYECTO
+# =============================================================================
+sudo mkdir -p /var/www/assetflow
+sudo chown -R $USER:$USER /var/www/assetflow
+mkdir -p /var/www/assetflow/logs
+mkdir -p /var/www/assetflow/backups
+mkdir -p /var/www/assetflow/uploads
+
+# =============================================================================
+# PASO 8: CONFIGURAR SISTEMA
+# =============================================================================
+echo "fs.inotify.max_user_watches=524288" | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+
+# =============================================================================
+# PASO 9: VERIFICAR INSTALACIONES
+# =============================================================================
+echo "=== VERIFICACIÓN ==="
+git --version
+docker --version
+docker-compose --version
+node --version
+npm --version
+sudo ufw status
+
+echo "¡CONFIGURACIÓN COMPLETA!"
+echo "IMPORTANTE: Cierra sesión y vuelve a entrar para que Docker funcione sin sudo"

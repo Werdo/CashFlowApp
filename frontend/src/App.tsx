@@ -1,0 +1,50 @@
+import { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import AssetsModule from './pages/modules/AssetsModule';
+import MaintenanceModule from './pages/modules/MaintenanceModule';
+import MovementsModule from './pages/modules/MovementsModule';
+import DepositModule from './pages/modules/DepositModule';
+import ReportsModule from './pages/modules/ReportsModule';
+import InvoicingModule from './pages/modules/InvoicingModule';
+import Layout from './components/Layout';
+
+function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  const handleLogin = (userData: any) => {
+    setIsAuthenticated(true);
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setUser(null);
+  };
+
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
+
+  return (
+    <BrowserRouter>
+      <Layout user={user} onLogout={handleLogout}>
+        <Routes>
+          <Route path="/" element={<Dashboard user={user} />} />
+          <Route path="/dashboard" element={<Dashboard user={user} />} />
+          <Route path="/assets/*" element={<AssetsModule />} />
+          <Route path="/maintenance/*" element={<MaintenanceModule />} />
+          <Route path="/movements/*" element={<MovementsModule />} />
+          <Route path="/deposit/*" element={<DepositModule />} />
+          <Route path="/reports/*" element={<ReportsModule />} />
+          <Route path="/invoicing/*" element={<InvoicingModule />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Layout>
+    </BrowserRouter>
+  );
+}
+
+export default App;
