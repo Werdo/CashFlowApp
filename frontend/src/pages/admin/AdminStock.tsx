@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { getApiUrl } from '../../config/api';
 
 interface Client {
   _id: string;
@@ -117,7 +118,7 @@ const AdminStock: React.FC = () => {
   const loadClients = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/clients', {
+      const response = await axios.get(getApiUrl('/api/clients'), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -140,7 +141,7 @@ const AdminStock: React.FC = () => {
 
   const loadArticles = async () => {
     try {
-      const response = await axios.get('/api/articles', {
+      const response = await axios.get(getApiUrl('/api/articles'), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -156,7 +157,7 @@ const AdminStock: React.FC = () => {
     if (!selectedWarehouse?._id) return;
 
     try {
-      const response = await axios.get(`/api/stock/warehouse/${selectedWarehouse._id}`, {
+      const response = await axios.get(getApiUrl(`/api/stock/warehouse/${selectedWarehouse._id}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -173,7 +174,7 @@ const AdminStock: React.FC = () => {
     if (!selectedWarehouse?._id) return;
 
     try {
-      const response = await axios.get(`/api/stock/movements/warehouse/${selectedWarehouse._id}?limit=50`, {
+      const response = await axios.get(getApiUrl(`/api/stock/movements/warehouse/${selectedWarehouse._id}?limit=50`), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -198,7 +199,7 @@ const AdminStock: React.FC = () => {
         lotCode: movementForm.lotCode || undefined
       };
 
-      const response = await axios.post('/api/stock/movements', payload, {
+      const response = await axios.post(getApiUrl('/api/stock/movements'), payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -231,7 +232,7 @@ const AdminStock: React.FC = () => {
         reason: transferForm.reason
       };
 
-      const response = await axios.post('/api/stock/transfer', payload, {
+      const response = await axios.post(getApiUrl('/api/stock/transfer'), payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

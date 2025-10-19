@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { getApiUrl } from '../../config/api';
 
 interface User {
   _id: string;
@@ -85,7 +86,7 @@ const AdminUsers: React.FC = () => {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/auth/users', {
+      const response = await axios.get(getApiUrl('/api/auth/users'), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -102,7 +103,7 @@ const AdminUsers: React.FC = () => {
 
   const loadAuditLogs = async () => {
     try {
-      const response = await axios.get('/api/audit-logs?limit=100', {
+      const response = await axios.get(getApiUrl('/api/audit-logs?limit=100'), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -117,7 +118,7 @@ const AdminUsers: React.FC = () => {
 
   const loadAccessLogs = async () => {
     try {
-      const response = await axios.get('/api/access-logs?limit=100', {
+      const response = await axios.get(getApiUrl('/api/access-logs?limit=100'), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -132,7 +133,7 @@ const AdminUsers: React.FC = () => {
 
   const handleCreateUser = async () => {
     try {
-      const response = await axios.post('/api/auth/register', userForm, {
+      const response = await axios.post(getApiUrl('/api/auth/register'), userForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -152,7 +153,7 @@ const AdminUsers: React.FC = () => {
 
     try {
       const response = await axios.put(
-        `/api/auth/users/${editingUser._id}`,
+        getApiUrl(`/api/auth/users/${editingUser._id}`),
         userForm,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -173,7 +174,7 @@ const AdminUsers: React.FC = () => {
     if (!window.confirm('¿Está seguro de eliminar este usuario? Esta acción no se puede deshacer.')) return;
 
     try {
-      const response = await axios.delete(`/api/auth/users/${userId}`, {
+      const response = await axios.delete(getApiUrl(`/api/auth/users/${userId}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -189,7 +190,7 @@ const AdminUsers: React.FC = () => {
   const handleToggleUserStatus = async (userId: string, currentStatus: boolean) => {
     try {
       const response = await axios.patch(
-        `/api/auth/users/${userId}/toggle-status`,
+        getApiUrl(`/api/auth/users/${userId}/toggle-status`),
         { active: !currentStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -218,7 +219,7 @@ const AdminUsers: React.FC = () => {
 
     try {
       const response = await axios.post(
-        `/api/auth/users/${selectedUser._id}/reset-password`,
+        getApiUrl(`/api/auth/users/${selectedUser._id}/reset-password`),
         { newPassword: passwordForm.newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );

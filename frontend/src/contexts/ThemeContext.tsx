@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
+import { getApiUrl } from '../config/api';
 
 interface ThemeColors {
   primary: string;
@@ -117,7 +118,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
           return;
         }
 
-        const response = await axios.get('/api/settings', {
+        const response = await axios.get(getApiUrl('/api/settings'), {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -157,7 +158,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       };
 
       const response = await axios.put(
-        '/api/settings/theme',
+        getApiUrl('/api/settings/theme'),
         { themeSettings: updatedTheme },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -179,7 +180,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       if (!token) throw new Error('No authentication token');
 
       const response = await axios.put(
-        '/api/settings/theme',
+        getApiUrl('/api/settings/theme'),
         { themeSettings: defaultTheme },
         { headers: { Authorization: `Bearer ${token}` } }
       );

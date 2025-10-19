@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { getApiUrl } from '../../config/api';
 
 interface Client {
   _id: string;
@@ -48,7 +49,7 @@ const AdminClients: React.FC = () => {
   const loadClients = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/clients', {
+      const response = await axios.get(getApiUrl('/api/clients'), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -65,7 +66,7 @@ const AdminClients: React.FC = () => {
 
   const handleCreateClient = async () => {
     try {
-      const response = await axios.post('/api/clients', clientForm, {
+      const response = await axios.post(getApiUrl('/api/clients'), clientForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -85,7 +86,7 @@ const AdminClients: React.FC = () => {
 
     try {
       const response = await axios.put(
-        `/api/clients/${editingClient._id}`,
+        getApiUrl(`/api/clients/${editingClient._id}`),
         clientForm,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -106,7 +107,7 @@ const AdminClients: React.FC = () => {
     if (!window.confirm('¿Está seguro de eliminar este cliente?')) return;
 
     try {
-      const response = await axios.delete(`/api/clients/${clientId}`, {
+      const response = await axios.delete(getApiUrl(`/api/clients/${clientId}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
 

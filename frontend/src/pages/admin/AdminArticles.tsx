@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useDropzone } from 'react-dropzone';
+import { getApiUrl } from '../../config/api';
 
 interface Article {
   _id: string;
@@ -63,7 +64,7 @@ const AdminArticles: React.FC = () => {
   const loadArticles = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/articles', {
+      const response = await axios.get(getApiUrl('/api/articles'), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -80,7 +81,7 @@ const AdminArticles: React.FC = () => {
 
   const loadFamilies = async () => {
     try {
-      const response = await axios.get('/api/articles/families', {
+      const response = await axios.get(getApiUrl('/api/articles/families'), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -107,7 +108,7 @@ const AdminArticles: React.FC = () => {
         formData.append('images', file);
       });
 
-      const response = await axios.post('/api/articles', formData, {
+      const response = await axios.post(getApiUrl('/api/articles'), formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -143,7 +144,7 @@ const AdminArticles: React.FC = () => {
       });
 
       const response = await axios.put(
-        `/api/articles/${editingArticle._id}`,
+        getApiUrl(`/api/articles/${editingArticle._id}`),
         formData,
         {
           headers: {
@@ -169,7 +170,7 @@ const AdminArticles: React.FC = () => {
     if (!window.confirm('¿Está seguro de eliminar este artículo?')) return;
 
     try {
-      const response = await axios.delete(`/api/articles/${articleId}`, {
+      const response = await axios.delete(getApiUrl(`/api/articles/${articleId}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { getApiUrl } from '../../config/api';
 
 interface MasterLot {
   _id: string;
@@ -111,7 +112,7 @@ const AdminLots: React.FC = () => {
   const loadMasterLots = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/lots/master', {
+      const response = await axios.get(getApiUrl('/api/lots/master'), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -128,7 +129,7 @@ const AdminLots: React.FC = () => {
 
   const loadExportLots = async () => {
     try {
-      const response = await axios.get('/api/lots/export', {
+      const response = await axios.get(getApiUrl('/api/lots/export'), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -142,7 +143,7 @@ const AdminLots: React.FC = () => {
 
   const loadTraceCodes = async () => {
     try {
-      const response = await axios.get('/api/lots/trace', {
+      const response = await axios.get(getApiUrl('/api/lots/trace'), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -156,7 +157,7 @@ const AdminLots: React.FC = () => {
 
   const loadArticles = async () => {
     try {
-      const response = await axios.get('/api/articles', {
+      const response = await axios.get(getApiUrl('/api/articles'), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -170,7 +171,7 @@ const AdminLots: React.FC = () => {
 
   const handleCreateMasterLot = async () => {
     try {
-      const response = await axios.post('/api/lots/master', masterForm, {
+      const response = await axios.post(getApiUrl('/api/lots/master'), masterForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -189,7 +190,7 @@ const AdminLots: React.FC = () => {
     if (!editingMaster) return;
 
     try {
-      const response = await axios.put(`/api/lots/master/${editingMaster._id}`, masterForm, {
+      const response = await axios.put(getApiUrl(`/api/lots/master/${editingMaster._id}`), masterForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -207,7 +208,7 @@ const AdminLots: React.FC = () => {
 
   const handleCreateExportLot = async () => {
     try {
-      const response = await axios.post('/api/lots/export', exportForm, {
+      const response = await axios.post(getApiUrl('/api/lots/export'), exportForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -224,7 +225,7 @@ const AdminLots: React.FC = () => {
 
   const handleGenerateTraceCodes = async () => {
     try {
-      const response = await axios.post('/api/lots/trace/generate', traceForm, {
+      const response = await axios.post(getApiUrl('/api/lots/trace/generate'), traceForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

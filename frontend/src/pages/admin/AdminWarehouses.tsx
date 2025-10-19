@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { getApiUrl } from '../../config/api';
 
 interface Client {
   _id: string;
@@ -60,7 +61,7 @@ const AdminWarehouses: React.FC = () => {
   const loadClients = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/clients', {
+      const response = await axios.get(getApiUrl('/api/clients'), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -86,7 +87,7 @@ const AdminWarehouses: React.FC = () => {
 
     try {
       const response = await axios.post(
-        `/api/clients/${selectedClient._id}/warehouses`,
+        getApiUrl(`/api/clients/${selectedClient._id}/warehouses`),
         warehouseForm,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -107,7 +108,7 @@ const AdminWarehouses: React.FC = () => {
 
     try {
       const response = await axios.put(
-        `/api/clients/${selectedClient._id}/warehouses/${editingWarehouse._id}`,
+        getApiUrl(`/api/clients/${selectedClient._id}/warehouses/${editingWarehouse._id}`),
         warehouseForm,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -129,7 +130,7 @@ const AdminWarehouses: React.FC = () => {
 
     try {
       const response = await axios.delete(
-        `/api/clients/${selectedClient._id}/warehouses/${warehouseId}`,
+        getApiUrl(`/api/clients/${selectedClient._id}/warehouses/${warehouseId}`),
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -150,7 +151,7 @@ const AdminWarehouses: React.FC = () => {
 
     try {
       const response = await axios.post(
-        `/api/clients/${selectedClient._id}/warehouses/${selectedWarehouse._id}/locations`,
+        getApiUrl(`/api/clients/${selectedClient._id}/warehouses/${selectedWarehouse._id}/locations`),
         locationForm,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -184,7 +185,7 @@ const AdminWarehouses: React.FC = () => {
       });
 
       const response = await axios.post(
-        `/api/clients/${selectedClient._id}/warehouses/${selectedWarehouse._id}/locations/import`,
+        getApiUrl(`/api/clients/${selectedClient._id}/warehouses/${selectedWarehouse._id}/locations/import`),
         { locations },
         { headers: { Authorization: `Bearer ${token}` } }
       );

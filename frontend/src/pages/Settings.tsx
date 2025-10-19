@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useTheme } from '../contexts/ThemeContext';
 import ColorPicker from '../components/settings/ColorPicker';
 import { useDropzone } from 'react-dropzone';
+import { getApiUrl } from '../config/api';
 
 interface User {
   _id: string;
@@ -132,7 +133,7 @@ const Settings: React.FC = () => {
 
   const loadSettings = async () => {
     try {
-      const response = await axios.get('/api/settings', {
+      const response = await axios.get(getApiUrl('/api/settings'), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -161,7 +162,7 @@ const Settings: React.FC = () => {
 
   const loadUsers = async () => {
     try {
-      const response = await axios.get('/api/auth/users', {
+      const response = await axios.get(getApiUrl('/api/auth/users'), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -177,7 +178,7 @@ const Settings: React.FC = () => {
   // User management functions
   const handleCreateUser = async () => {
     try {
-      const response = await axios.post('/api/auth/register', userForm, {
+      const response = await axios.post(getApiUrl('/api/auth/register'), userForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -197,7 +198,7 @@ const Settings: React.FC = () => {
 
     try {
       const response = await axios.put(
-        `/api/auth/users/${editingUser._id}`,
+        getApiUrl(`/api/auth/users/${editingUser._id}`),
         userForm,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -218,7 +219,7 @@ const Settings: React.FC = () => {
     if (!window.confirm('¿Está seguro de eliminar este usuario?')) return;
 
     try {
-      const response = await axios.delete(`/api/auth/users/${userId}`, {
+      const response = await axios.delete(getApiUrl(`/api/auth/users/${userId}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -296,7 +297,7 @@ const Settings: React.FC = () => {
   const handleSaveCompanySettings = async () => {
     try {
       const response = await axios.put(
-        '/api/settings/company',
+        getApiUrl('/api/settings/company'),
         { companySettings },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -313,7 +314,7 @@ const Settings: React.FC = () => {
   const handleSaveSystemSettings = async () => {
     try {
       const response = await axios.put(
-        '/api/settings/system',
+        getApiUrl('/api/settings/system'),
         { systemSettings },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -330,7 +331,7 @@ const Settings: React.FC = () => {
   const handleSaveIntegrationSettings = async () => {
     try {
       const response = await axios.put(
-        '/api/settings/integrations',
+        getApiUrl('/api/settings/integrations'),
         { integrationSettings },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -352,7 +353,7 @@ const Settings: React.FC = () => {
     formData.append('logo', file);
 
     try {
-      const response = await axios.post('/api/settings/logo', formData, {
+      const response = await axios.post(getApiUrl('/api/settings/logo'), formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
