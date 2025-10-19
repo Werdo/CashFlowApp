@@ -1,4 +1,4 @@
-const { Article, Family } = require('../models');
+const { Article, Family, Deposit } = require('../models');
 
 async function getArticles(req, res, next) {
   try {
@@ -53,9 +53,55 @@ async function updateArticle(req, res, next) {
 
 async function deleteArticle(req, res, next) {
   try {
-    const article = await Article.findByIdAndUpdate(req.params.id, { active: false }, { new: true });
-    if (!article) return res.status(404).json({ success: false, message: 'Article not found' });
-    res.json({ success: true, message: 'Article deleted', data: { article } });
+    const articleId = req.params.id;
+
+    // Check if article exists
+    const article = await Article.findById(articleId);
+    if (!article) {
+      return res.status(404).json({
+        success: false,
+        message: 'Article not found'
+      });
+    }
+
+    // Validate: Check if article has active deposits
+    const hasDeposits = await Deposit.hasActiveDeposits(articleId);
+
+    if (hasDeposits) {
+      // Get list of deposits for detailed error message
+      const deposits = await Deposit.getByArticle(articleId)
+        .select('code clientName status')
+        .limit(10);
+
+      return res.status(409).json({
+        success: false,
+        message: 'Cannot delete article with active deposits',
+        error: {
+          code: 'ARTICLE_HAS_DEPOSITS',
+          details: 'This article is currently in one or more active deposits',
+          activeDeposits: deposits.map(d => ({
+            code: d.code,
+            client: d.clientName,
+            status: d.status
+          })),
+          suggestions: [
+            'Complete or cancel the deposits first',
+            'Mark the article as inactive instead of deleting it',
+            'Transfer items to a different article'
+          ]
+        }
+      });
+    }
+
+    // Safe to delete (soft delete)
+    article.active = false;
+    await article.save();
+
+    res.json({
+      success: true,
+      message: 'Article deleted successfully',
+      data: { article }
+    });
   } catch (error) {
     next(error);
   }

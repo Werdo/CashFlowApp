@@ -1,60 +1,397 @@
-import { useState, useMemo } from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
-import SpainMap from '../../components/SpainMap';
-import QRCodeGenerator from '../../components/QRCodeGenerator';
-import { postalOffices, getPostalOfficeByCode } from '../../data/postalOffices';
-import { mockDepositItems, mockClients } from '../../data/mockData';
-import { PostalOffice, DepositItem, Client } from '../../types';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import toast from 'react-hot-toast';
 
-// Main Deposit Module with Map View
-function DepositMapView() {
-  const navigate = useNavigate();
-  const [selectedOffice, setSelectedOffice] = useState<PostalOffice | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterProvince, setFilterProvince] = useState<string>('all');
+interface DepositItem {
+  _id?: string;
+  article: {
+    _id: string;
+    sku: string;
+    name: string;
+  };
+  articleName?: string;
+  articleSKU?: string;
+  quantity: number;
+  unit: string;
+  receivedDate: string;
+  expiryDate?: string;
+  lotNumber?: string;
+  notes?: string;
+}
 
-  // Calculate items per office
-  const officeStats = useMemo(() => {
-    const stats = new Map<string, { total: number; stored: number; inTransit: number }>();
+interface Deposit {
+  _id: string;
+  code: string;
+  client: {
+    _id: string;
+    code: string;
+    name: string;
+    color?: string;
+  };
+  clientName?: string;
+  warehouse?: string;
+  warehouseName?: string;
+  location?: string;
+  items: DepositItem[];
+  status: 'active' | 'invoiced' | 'partial' | 'closed' | 'cancelled';
+  receivedDate: string;
+  dueDate?: string;
+  totalValue: number;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: {
+    name: string;
+    email: string;
+  };
+  updatedBy?: {
+    name: string;
+    email: string;
+  };
+  // Virtuals from backend
+  daysUntilDue?: number | null;
+  isOverdue?: boolean;
+  alertLevel?: 'none' | 'info' | 'warning' | 'critical';
+}
 
-    postalOffices.forEach(office => {
-      const items = mockDepositItems.filter(item => item.location.id === office.id);
-      stats.set(office.id, {
-        total: items.length,
-        stored: items.filter(i => i.status === 'stored').length,
-        inTransit: items.filter(i => i.status === 'in-transit').length,
-      });
-    });
+interface Client {
+  _id: string;
+  code: string;
+  name: string;
+  color?: string;
+}
 
-    return stats;
-  }, []);
+interface Article {
+  _id: string;
+  sku: string;
+  name: string;
+  ean?: string;
+}
 
-  // Filter offices
-  const filteredOffices = useMemo(() => {
-    return postalOffices.filter(office => {
-      const matchesSearch = office.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           office.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           office.officeCode.includes(searchTerm);
+interface DepositStats {
+  total: number;
+  byStatus: {
+    active: number;
+    invoiced: number;
+    partial: number;
+    closed: number;
+    cancelled: number;
+  };
+  totalValue: number;
+  alerts: {
+    critical: number;
+    warning: number;
+    info: number;
+  };
+}
 
-      const matchesProvince = filterProvince === 'all' || office.province === filterProvince;
+export default function DepositModule() {
+  const [deposits, setDeposits] = useState<Deposit[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [stats, setStats] = useState<DepositStats | null>(null);
+  const [loading, setLoading] = useState(true);
 
-      return matchesSearch && matchesProvince;
-    });
-  }, [searchTerm, filterProvince]);
+  // Filters
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterClient, setFilterClient] = useState<string>('');
+  const [filterAlertLevel, setFilterAlertLevel] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
-  // Get unique provinces
-  const provinces = useMemo(() => {
-    return Array.from(new Set(postalOffices.map(o => o.province))).sort();
-  }, []);
+  // Modals
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedDeposit, setSelectedDeposit] = useState<Deposit | null>(null);
 
-  const handleOfficeClick = (office: PostalOffice) => {
-    setSelectedOffice(office);
+  // Form data
+  const [formData, setFormData] = useState({
+    code: '',
+    client: '',
+    warehouse: '',
+    location: '',
+    items: [] as Array<{
+      article: string;
+      quantity: number;
+      unit: string;
+      receivedDate: string;
+      expiryDate?: string;
+      lotNumber?: string;
+      notes?: string;
+    }>,
+    dueDate: '',
+    notes: ''
+  });
+
+  const token = localStorage.getItem('token');
+  const userString = localStorage.getItem('user');
+  const user = userString ? JSON.parse(userString) : null;
+  const userRole = user?.role || 'viewer';
+
+  useEffect(() => {
+    loadData();
+  }, [filterStatus, filterClient, filterAlertLevel]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+
+      const params: any = {};
+      if (filterStatus !== 'all') params.status = filterStatus;
+      if (filterClient) params.clientId = filterClient;
+      if (filterAlertLevel !== 'all') params.alertLevel = filterAlertLevel;
+      if (searchTerm) params.search = searchTerm;
+
+      const [depositsRes, clientsRes, articlesRes, statsRes] = await Promise.all([
+        axios.get('/api/deposits', {
+          headers: { Authorization: `Bearer ${token}` },
+          params
+        }),
+        axios.get('/api/clients', {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { active: true }
+        }),
+        axios.get('/api/articles', {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { active: true }
+        }),
+        axios.get('/api/deposits/stats', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+
+      setDeposits(depositsRes.data.data || []);
+      setClients(clientsRes.data.data.clients || []);
+      setArticles(articlesRes.data.data.articles || []);
+      setStats(statsRes.data.data || null);
+    } catch (error: any) {
+      console.error('Error loading data:', error);
+      toast.error('Error al cargar datos');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const totalItems = mockDepositItems.length;
-  const storedItems = mockDepositItems.filter(i => i.status === 'stored').length;
-  const inTransitItems = mockDepositItems.filter(i => i.status === 'in-transit').length;
-  const totalClients = mockClients.filter(c => c.active).length;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.client || formData.items.length === 0) {
+      toast.error('Por favor complete todos los campos obligatorios');
+      return;
+    }
+
+    try {
+      const payload = {
+        ...formData,
+        items: formData.items.map(item => ({
+          article: item.article,
+          quantity: Number(item.quantity),
+          unit: item.unit,
+          receivedDate: item.receivedDate,
+          expiryDate: item.expiryDate || undefined,
+          lotNumber: item.lotNumber,
+          notes: item.notes
+        }))
+      };
+
+      if (showEditModal && selectedDeposit) {
+        await axios.put(`/api/deposits/${selectedDeposit._id}`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        toast.success('Depósito actualizado exitosamente');
+      } else {
+        await axios.post('/api/deposits', payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        toast.success('Depósito creado exitosamente');
+      }
+
+      setShowCreateModal(false);
+      setShowEditModal(false);
+      resetForm();
+      loadData();
+    } catch (error: any) {
+      console.error('Error saving deposit:', error);
+      toast.error(error.response?.data?.message || 'Error al guardar depósito');
+    }
+  };
+
+  const handleDelete = async (depositId: string) => {
+    if (!window.confirm('¿Está seguro de cancelar este depósito?')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/api/deposits/${depositId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Depósito cancelado exitosamente');
+      loadData();
+    } catch (error: any) {
+      console.error('Error deleting deposit:', error);
+      if (error.response?.data?.error?.code === 'DEPOSIT_CLOSED') {
+        toast.error('No se puede eliminar un depósito cerrado');
+      } else if (error.response?.data?.error?.code === 'DEPOSIT_INVOICED') {
+        toast.error('No se puede eliminar un depósito facturado');
+      } else {
+        toast.error(error.response?.data?.message || 'Error al cancelar depósito');
+      }
+    }
+  };
+
+  const handleClose = async (depositId: string) => {
+    if (!window.confirm('¿Marcar este depósito como cerrado?')) {
+      return;
+    }
+
+    try {
+      await axios.post(`/api/deposits/${depositId}/close`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Depósito cerrado exitosamente');
+      loadData();
+    } catch (error: any) {
+      console.error('Error closing deposit:', error);
+      toast.error(error.response?.data?.message || 'Error al cerrar depósito');
+    }
+  };
+
+  const openCreateModal = () => {
+    resetForm();
+    setShowCreateModal(true);
+  };
+
+  const openEditModal = (deposit: Deposit) => {
+    setSelectedDeposit(deposit);
+    setFormData({
+      code: deposit.code,
+      client: deposit.client._id,
+      warehouse: deposit.warehouse || '',
+      location: deposit.location || '',
+      items: deposit.items.map(item => ({
+        article: item.article._id,
+        quantity: item.quantity,
+        unit: item.unit,
+        receivedDate: item.receivedDate.split('T')[0],
+        expiryDate: item.expiryDate ? item.expiryDate.split('T')[0] : '',
+        lotNumber: item.lotNumber || '',
+        notes: item.notes || ''
+      })),
+      dueDate: deposit.dueDate ? deposit.dueDate.split('T')[0] : '',
+      notes: deposit.notes || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const openViewModal = (deposit: Deposit) => {
+    setSelectedDeposit(deposit);
+    setShowViewModal(true);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      code: '',
+      client: '',
+      warehouse: '',
+      location: '',
+      items: [],
+      dueDate: '',
+      notes: ''
+    });
+    setSelectedDeposit(null);
+  };
+
+  const addItem = () => {
+    setFormData({
+      ...formData,
+      items: [...formData.items, {
+        article: '',
+        quantity: 1,
+        unit: 'units',
+        receivedDate: new Date().toISOString().split('T')[0],
+        expiryDate: '',
+        lotNumber: '',
+        notes: ''
+      }]
+    });
+  };
+
+  const removeItem = (index: number) => {
+    setFormData({
+      ...formData,
+      items: formData.items.filter((_, i) => i !== index)
+    });
+  };
+
+  const updateItem = (index: number, field: string, value: any) => {
+    const updatedItems = [...formData.items];
+    updatedItems[index] = { ...updatedItems[index], [field]: value };
+    setFormData({ ...formData, items: updatedItems });
+  };
+
+  const filteredDeposits = deposits.filter(deposit => {
+    const matchesSearch = !searchTerm ||
+      deposit.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      deposit.client.name.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
+
+  // Calculate alert level (client-side fallback if backend doesn't provide it)
+  const calculateAlertLevel = (deposit: Deposit): 'none' | 'info' | 'warning' | 'critical' => {
+    if (!deposit.dueDate || !['active', 'partial'].includes(deposit.status)) {
+      return 'none';
+    }
+
+    const now = new Date();
+    const dueDate = new Date(deposit.dueDate);
+    const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (daysUntilDue < 0) return 'critical';
+    if (daysUntilDue <= 7) return 'warning';
+    if (daysUntilDue <= 30) return 'info';
+    return 'none';
+  };
+
+  // Status labels and colors
+  const statusLabels: Record<string, string> = {
+    'active': 'Activo',
+    'invoiced': 'Facturado',
+    'partial': 'Parcial',
+    'closed': 'Cerrado',
+    'cancelled': 'Cancelado'
+  };
+
+  const statusColors: Record<string, string> = {
+    'active': 'success',
+    'invoiced': 'info',
+    'partial': 'warning',
+    'closed': 'secondary',
+    'cancelled': 'dark'
+  };
+
+  const alertColors: Record<string, string> = {
+    'none': 'secondary',
+    'info': 'info',
+    'warning': 'warning',
+    'critical': 'danger'
+  };
+
+  const alertLabels: Record<string, string> = {
+    'none': 'Sin alertas',
+    'info': 'Vence en 30 días',
+    'warning': 'Vence en 7 días',
+    'critical': 'Vencido'
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -65,8 +402,8 @@ function DepositMapView() {
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <h6 className="text-muted mb-1">Total Items</h6>
-                  <h3 className="mb-0">{totalItems}</h3>
+                  <h6 className="text-muted mb-1">Total Depósitos</h6>
+                  <h3 className="mb-0">{stats?.total || 0}</h3>
                 </div>
                 <div className="text-primary" style={{ fontSize: '2rem' }}>📦</div>
               </div>
@@ -78,8 +415,8 @@ function DepositMapView() {
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <h6 className="text-muted mb-1">Almacenados</h6>
-                  <h3 className="mb-0">{storedItems}</h3>
+                  <h6 className="text-muted mb-1">Activos</h6>
+                  <h3 className="mb-0">{stats?.byStatus.active || 0}</h3>
                 </div>
                 <div className="text-success" style={{ fontSize: '2rem' }}>✅</div>
               </div>
@@ -91,10 +428,10 @@ function DepositMapView() {
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <h6 className="text-muted mb-1">En Tránsito</h6>
-                  <h3 className="mb-0">{inTransitItems}</h3>
+                  <h6 className="text-muted mb-1">Alertas Críticas</h6>
+                  <h3 className="mb-0">{stats?.alerts.critical || 0}</h3>
                 </div>
-                <div className="text-warning" style={{ fontSize: '2rem' }}>🚚</div>
+                <div className="text-danger" style={{ fontSize: '2rem' }}>⚠️</div>
               </div>
             </div>
           </div>
@@ -104,529 +441,86 @@ function DepositMapView() {
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <h6 className="text-muted mb-1">Clientes Activos</h6>
-                  <h3 className="mb-0">{totalClients}</h3>
+                  <h6 className="text-muted mb-1">Valor Total</h6>
+                  <h3 className="mb-0">${stats?.totalValue.toLocaleString() || 0}</h3>
                 </div>
-                <div className="text-info" style={{ fontSize: '2rem' }}>👥</div>
+                <div className="text-info" style={{ fontSize: '2rem' }}>💰</div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="row">
-        {/* Map Section */}
-        <div className="col-lg-8">
-          <div className="card border-0 shadow-sm mb-4">
-            <div className="card-header bg-white border-bottom">
-              <div className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">🗺️ Mapa de Oficinas de Correos</h5>
-                <div className="d-flex gap-2">
-                  <input
-                    type="text"
-                    className="form-control form-control-sm"
-                    placeholder="Buscar oficina..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    style={{ width: '200px' }}
-                  />
-                  <select
-                    className="form-select form-select-sm"
-                    value={filterProvince}
-                    onChange={(e) => setFilterProvince(e.target.value)}
-                    style={{ width: '150px' }}
-                  >
-                    <option value="all">Todas las provincias</option>
-                    {provinces.map(province => (
-                      <option key={province} value={province}>{province}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div className="card-body p-0">
-              <SpainMap
-                offices={filteredOffices}
-                onOfficeClick={handleOfficeClick}
-                height="600px"
-              />
-            </div>
-            <div className="card-footer bg-white border-top">
-              <div className="d-flex justify-content-between align-items-center">
-                <small className="text-muted">
-                  Mostrando {filteredOffices.length} de {postalOffices.length} oficinas
-                </small>
-                <div className="d-flex gap-3">
-                  <small><span className="badge bg-success">●</span> &lt; 60% ocupación</small>
-                  <small><span className="badge bg-warning">●</span> 60-80% ocupación</small>
-                  <small><span className="badge bg-danger">●</span> &gt; 80% ocupación</small>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Office Details Section */}
-        <div className="col-lg-4">
-          {selectedOffice ? (
-            <div className="card border-0 shadow-sm">
-              <div className="card-header bg-primary text-white">
-                <h5 className="mb-0">🏢 {selectedOffice.name}</h5>
-              </div>
-              <div className="card-body">
-                <div className="mb-3">
-                  <small className="text-muted">Código Oficina</small>
-                  <div className="fw-bold">{selectedOffice.officeCode}</div>
-                </div>
-
-                <div className="mb-3">
-                  <small className="text-muted">Ubicación</small>
-                  <div>{selectedOffice.address}</div>
-                  <div>{selectedOffice.postalCode} {selectedOffice.city}</div>
-                  <div>{selectedOffice.province}</div>
-                </div>
-
-                {selectedOffice.manager && (
-                  <div className="mb-3">
-                    <small className="text-muted">Responsable</small>
-                    <div>{selectedOffice.manager}</div>
-                  </div>
-                )}
-
-                {selectedOffice.phone && (
-                  <div className="mb-3">
-                    <small className="text-muted">Teléfono</small>
-                    <div>{selectedOffice.phone}</div>
-                  </div>
-                )}
-
-                {selectedOffice.email && (
-                  <div className="mb-3">
-                    <small className="text-muted">Email</small>
-                    <div>{selectedOffice.email}</div>
-                  </div>
-                )}
-
-                <div className="mb-3">
-                  <small className="text-muted">Capacidad</small>
-                  <div className="progress" style={{ height: '20px' }}>
-                    <div
-                      className={`progress-bar ${
-                        (selectedOffice.currentOccupancy / selectedOffice.capacity) * 100 > 80
-                          ? 'bg-danger'
-                          : (selectedOffice.currentOccupancy / selectedOffice.capacity) * 100 > 60
-                          ? 'bg-warning'
-                          : 'bg-success'
-                      }`}
-                      style={{ width: `${(selectedOffice.currentOccupancy / selectedOffice.capacity) * 100}%` }}
-                    >
-                      {selectedOffice.currentOccupancy} / {selectedOffice.capacity}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-3">
-                  <small className="text-muted">Items en esta oficina</small>
-                  <div className="d-flex justify-content-between mt-2">
-                    <span>Total: <strong>{officeStats.get(selectedOffice.id)?.total || 0}</strong></span>
-                    <span>Almacenados: <strong>{officeStats.get(selectedOffice.id)?.stored || 0}</strong></span>
-                  </div>
-                </div>
-
-                <button
-                  className="btn btn-primary w-100"
-                  onClick={() => navigate(`/deposit/office/${selectedOffice.officeCode}`)}
-                >
-                  Ver Inventario Detallado
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="card border-0 shadow-sm">
-              <div className="card-body text-center py-5">
-                <div style={{ fontSize: '3rem' }}>🗺️</div>
-                <h5 className="mt-3">Selecciona una oficina</h5>
-                <p className="text-muted">Haz clic en un marcador del mapa para ver los detalles de la oficina</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="row mt-4">
-        <div className="col-12">
-          <div className="card border-0 shadow-sm">
-            <div className="card-body">
-              <h6 className="mb-3">Acciones Rápidas</h6>
-              <div className="d-flex gap-2">
-                <Link to="/deposit/items" className="btn btn-outline-primary">
-                  📦 Ver Todos los Items
-                </Link>
-                <Link to="/deposit/clients" className="btn btn-outline-success">
-                  👥 Gestionar Clientes
-                </Link>
-                <Link to="/deposit/new" className="btn btn-primary">
-                  ➕ Nuevo Ingreso
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Office Detail View
-function OfficeDetailView() {
-  const navigate = useNavigate();
-  const officeCode = window.location.pathname.split('/').pop() || '';
-  const office = getPostalOfficeByCode(officeCode);
-  const [selectedItem, setSelectedItem] = useState<DepositItem | null>(null);
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterClient, setFilterClient] = useState<string>('all');
-
-  if (!office) {
-    return (
-      <div className="alert alert-warning">
-        <h5>Oficina no encontrada</h5>
-        <button className="btn btn-primary" onClick={() => navigate('/deposit')}>
-          Volver al Mapa
-        </button>
-      </div>
-    );
-  }
-
-  // Get items for this office
-  const officeItems = mockDepositItems.filter(item => item.location.id === office.id);
-
-  // Filter items
-  const filteredItems = officeItems.filter(item => {
-    const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
-    const matchesClient = filterClient === 'all' || item.clientId === filterClient;
-    return matchesStatus && matchesClient;
-  });
-
-  // Get unique clients for this office
-  const officeClients = Array.from(new Set(officeItems.map(item => item.clientId)))
-    .map(clientId => mockClients.find(c => c.id === clientId))
-    .filter(Boolean) as Client[];
-
-  const statusColors: Record<string, string> = {
-    'stored': 'success',
-    'in-transit': 'warning',
-    'delivered': 'info',
-    'returned': 'secondary',
-  };
-
-  const statusLabels: Record<string, string> = {
-    'stored': 'Almacenado',
-    'in-transit': 'En Tránsito',
-    'delivered': 'Entregado',
-    'returned': 'Devuelto',
-  };
-
-  return (
-    <div>
-      {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <button className="btn btn-link text-decoration-none p-0 mb-2" onClick={() => navigate('/deposit')}>
-            ← Volver al Mapa
-          </button>
-          <h4 className="mb-0">🏢 {office.name}</h4>
-          <small className="text-muted">Código: {office.officeCode} | {office.city}, {office.province}</small>
-        </div>
-        <div>
-          <span className={`badge bg-${
-            (office.currentOccupancy / office.capacity) * 100 > 80 ? 'danger' :
-            (office.currentOccupancy / office.capacity) * 100 > 60 ? 'warning' : 'success'
-          } me-2`}>
-            {Math.round((office.currentOccupancy / office.capacity) * 100)}% Ocupación
-          </span>
-          <button className="btn btn-primary btn-sm">
-            ➕ Nuevo Ingreso
-          </button>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="row mb-4">
-        <div className="col-md-3">
-          <div className="card border-0 shadow-sm">
-            <div className="card-body text-center">
-              <h2>{officeItems.length}</h2>
-              <small className="text-muted">Total Items</small>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="card border-0 shadow-sm">
-            <div className="card-body text-center">
-              <h2>{officeItems.filter(i => i.status === 'stored').length}</h2>
-              <small className="text-muted">Almacenados</small>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="card border-0 shadow-sm">
-            <div className="card-body text-center">
-              <h2>{officeClients.length}</h2>
-              <small className="text-muted">Clientes</small>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="card border-0 shadow-sm">
-            <div className="card-body text-center">
-              <h2>{office.capacity - office.currentOccupancy}</h2>
-              <small className="text-muted">Espacio Disponible</small>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
+      {/* Filters and Actions */}
       <div className="card border-0 shadow-sm mb-4">
         <div className="card-body">
-          <div className="row">
-            <div className="col-md-4">
-              <label className="form-label small text-muted">Estado</label>
+          <div className="row g-3">
+            <div className="col-md-3">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Buscar por código o cliente..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="col-md-2">
               <select
                 className="form-select"
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
               >
                 <option value="all">Todos los estados</option>
-                <option value="stored">Almacenado</option>
-                <option value="in-transit">En Tránsito</option>
-                <option value="delivered">Entregado</option>
-                <option value="returned">Devuelto</option>
+                <option value="active">Activo</option>
+                <option value="invoiced">Facturado</option>
+                <option value="partial">Parcial</option>
+                <option value="closed">Cerrado</option>
+                <option value="cancelled">Cancelado</option>
               </select>
             </div>
-            <div className="col-md-4">
-              <label className="form-label small text-muted">Cliente</label>
+            <div className="col-md-2">
+              <select
+                className="form-select"
+                value={filterAlertLevel}
+                onChange={(e) => setFilterAlertLevel(e.target.value)}
+              >
+                <option value="all">Todas las alertas</option>
+                <option value="critical">Críticas</option>
+                <option value="warning">Advertencias</option>
+                <option value="info">Información</option>
+              </select>
+            </div>
+            <div className="col-md-3">
               <select
                 className="form-select"
                 value={filterClient}
                 onChange={(e) => setFilterClient(e.target.value)}
               >
-                <option value="all">Todos los clientes</option>
-                {officeClients.map(client => (
-                  <option key={client.id} value={client.id}>{client.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="col-md-4 d-flex align-items-end">
-              <button className="btn btn-outline-secondary w-100" onClick={() => {
-                setFilterStatus('all');
-                setFilterClient('all');
-              }}>
-                Limpiar Filtros
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Items Table */}
-      <div className="card border-0 shadow-sm">
-        <div className="card-header bg-white border-bottom">
-          <h6 className="mb-0">📦 Inventario ({filteredItems.length} items)</h6>
-        </div>
-        <div className="card-body p-0">
-          <div className="table-responsive">
-            <table className="table table-hover mb-0">
-              <thead className="table-light">
-                <tr>
-                  <th>Código</th>
-                  <th>Tipo</th>
-                  <th>Cliente</th>
-                  <th>Descripción</th>
-                  <th>Cantidad</th>
-                  <th>Fecha Ingreso</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredItems.map(item => (
-                  <tr key={item.id}>
-                    <td>
-                      <strong>{item.itemCode}</strong>
-                      <br />
-                      <small className="text-muted">{item.qrCode}</small>
-                    </td>
-                    <td>
-                      {item.itemType === 'box' && '📦 Caja'}
-                      {item.itemType === 'pallet' && '🟫 Pallet'}
-                      {item.itemType === 'document' && '📄 Documento'}
-                      {item.itemType === 'other' && '📋 Otro'}
-                    </td>
-                    <td>
-                      <strong>{item.client.name}</strong>
-                      <br />
-                      <small className="text-muted">{item.client.code}</small>
-                    </td>
-                    <td>{item.description}</td>
-                    <td>{item.quantity}</td>
-                    <td>{new Date(item.entryDate).toLocaleDateString('es-ES')}</td>
-                    <td>
-                      <span className={`badge bg-${statusColors[item.status]}`}>
-                        {statusLabels[item.status]}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        className="btn btn-sm btn-outline-primary"
-                        onClick={() => setSelectedItem(item)}
-                      >
-                        Ver QR
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      {/* QR Code Modal */}
-      {selectedItem && (
-        <div
-          className="modal d-block"
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-          onClick={() => setSelectedItem(null)}
-        >
-          <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Código QR - {selectedItem.itemCode}</h5>
-                <button type="button" className="btn-close" onClick={() => setSelectedItem(null)}></button>
-              </div>
-              <div className="modal-body text-center">
-                <QRCodeGenerator
-                  value={selectedItem.qrCode}
-                  title={`${selectedItem.itemCode} - ${selectedItem.client.name}`}
-                  size={256}
-                />
-                <div className="mt-3">
-                  <p className="mb-1"><strong>{selectedItem.description}</strong></p>
-                  <p className="text-muted mb-0">{selectedItem.client.name}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// All Items View
-function AllItemsView() {
-  const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterOffice, setFilterOffice] = useState<string>('all');
-
-  const filteredItems = mockDepositItems.filter(item => {
-    const matchesSearch = item.itemCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.client.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
-    const matchesOffice = filterOffice === 'all' || item.location.officeCode === filterOffice;
-
-    return matchesSearch && matchesStatus && matchesOffice;
-  });
-
-  const statusColors: Record<string, string> = {
-    'stored': 'success',
-    'in-transit': 'warning',
-    'delivered': 'info',
-    'returned': 'secondary',
-  };
-
-  const statusLabels: Record<string, string> = {
-    'stored': 'Almacenado',
-    'in-transit': 'En Tránsito',
-    'delivered': 'Entregado',
-    'returned': 'Devuelto',
-  };
-
-  return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <button className="btn btn-link text-decoration-none p-0 mb-2" onClick={() => navigate('/deposit')}>
-            ← Volver al Mapa
-          </button>
-          <h4 className="mb-0">📦 Todos los Items de Depósito</h4>
-        </div>
-        <button className="btn btn-primary">
-          ➕ Nuevo Ingreso
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="card border-0 shadow-sm mb-4">
-        <div className="card-body">
-          <div className="row">
-            <div className="col-md-4">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Buscar por código, descripción o cliente..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="col-md-3">
-              <select
-                className="form-select"
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-              >
-                <option value="all">Todos los estados</option>
-                <option value="stored">Almacenado</option>
-                <option value="in-transit">En Tránsito</option>
-                <option value="delivered">Entregado</option>
-                <option value="returned">Devuelto</option>
-              </select>
-            </div>
-            <div className="col-md-3">
-              <select
-                className="form-select"
-                value={filterOffice}
-                onChange={(e) => setFilterOffice(e.target.value)}
-              >
-                <option value="all">Todas las oficinas</option>
-                {postalOffices.map(office => (
-                  <option key={office.id} value={office.officeCode}>
-                    {office.officeCode} - {office.name}
+                <option value="">Todos los clientes</option>
+                {clients.map(client => (
+                  <option key={client._id} value={client._id}>
+                    {client.name}
                   </option>
                 ))}
               </select>
             </div>
             <div className="col-md-2">
-              <button className="btn btn-outline-secondary w-100" onClick={() => {
-                setSearchTerm('');
-                setFilterStatus('all');
-                setFilterOffice('all');
-              }}>
-                Limpiar
+              <button
+                className="btn btn-primary w-100"
+                onClick={openCreateModal}
+                disabled={!['admin', 'manager'].includes(userRole)}
+              >
+                ➕ Nuevo Depósito
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Items Table */}
+      {/* Deposits Table */}
       <div className="card border-0 shadow-sm">
         <div className="card-header bg-white border-bottom">
-          <h6 className="mb-0">Mostrando {filteredItems.length} de {mockDepositItems.length} items</h6>
+          <h6 className="mb-0">📦 Depósitos ({filteredDeposits.length})</h6>
         </div>
         <div className="card-body p-0">
           <div className="table-responsive">
@@ -634,65 +528,473 @@ function AllItemsView() {
               <thead className="table-light">
                 <tr>
                   <th>Código</th>
-                  <th>Tipo</th>
                   <th>Cliente</th>
-                  <th>Descripción</th>
-                  <th>Oficina</th>
-                  <th>Cantidad</th>
-                  <th>Fecha Ingreso</th>
+                  <th>Artículos</th>
+                  <th>Ubicación</th>
+                  <th>Fecha Recepción</th>
+                  <th>Fecha Vencimiento</th>
                   <th>Estado</th>
+                  <th>Alerta</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.map(item => (
-                  <tr key={item.id} style={{ cursor: 'pointer' }}>
-                    <td>
-                      <strong>{item.itemCode}</strong>
-                      <br />
-                      <small className="text-muted">{item.qrCode}</small>
-                    </td>
-                    <td>
-                      {item.itemType === 'box' && '📦 Caja'}
-                      {item.itemType === 'pallet' && '🟫 Pallet'}
-                      {item.itemType === 'document' && '📄 Documento'}
-                      {item.itemType === 'other' && '📋 Otro'}
-                    </td>
-                    <td>
-                      <strong>{item.client.name}</strong>
-                      <br />
-                      <small className="text-muted">{item.client.code}</small>
-                    </td>
-                    <td>{item.description}</td>
-                    <td>
-                      <strong>{item.location.officeCode}</strong>
-                      <br />
-                      <small className="text-muted">{item.location.city}</small>
-                    </td>
-                    <td>{item.quantity}</td>
-                    <td>{new Date(item.entryDate).toLocaleDateString('es-ES')}</td>
-                    <td>
-                      <span className={`badge bg-${statusColors[item.status]}`}>
-                        {statusLabels[item.status]}
-                      </span>
+                {filteredDeposits.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="text-center py-4 text-muted">
+                      No se encontraron depósitos
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredDeposits.map(deposit => {
+                    const alertLevel = calculateAlertLevel(deposit);
+                    return (
+                      <tr key={deposit._id}>
+                        <td>
+                          <strong>{deposit.code}</strong>
+                        </td>
+                        <td>
+                          <span
+                            className="badge"
+                            style={{
+                              backgroundColor: `${deposit.client.color || '#3B82F6'}20`,
+                              color: deposit.client.color || '#3B82F6',
+                              border: `1px solid ${deposit.client.color || '#3B82F6'}`
+                            }}
+                          >
+                            {deposit.client.name}
+                          </span>
+                        </td>
+                        <td>{deposit.items.length}</td>
+                        <td>
+                          {deposit.warehouse && (
+                            <>
+                              <strong>{deposit.warehouse}</strong>
+                              {deposit.location && <><br /><small className="text-muted">{deposit.location}</small></>}
+                            </>
+                          )}
+                          {!deposit.warehouse && <span className="text-muted">-</span>}
+                        </td>
+                        <td>{new Date(deposit.receivedDate).toLocaleDateString('es-ES')}</td>
+                        <td>
+                          {deposit.dueDate ? (
+                            new Date(deposit.dueDate).toLocaleDateString('es-ES')
+                          ) : (
+                            <span className="text-muted">-</span>
+                          )}
+                        </td>
+                        <td>
+                          <span className={`badge bg-${statusColors[deposit.status]}`}>
+                            {statusLabels[deposit.status]}
+                          </span>
+                        </td>
+                        <td>
+                          {alertLevel !== 'none' && (
+                            <span className={`badge bg-${alertColors[alertLevel]}`}>
+                              {alertLabels[alertLevel]}
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <div className="btn-group btn-group-sm">
+                            <button
+                              className="btn btn-outline-primary"
+                              onClick={() => openViewModal(deposit)}
+                              title="Ver detalles"
+                            >
+                              👁️
+                            </button>
+                            {['admin', 'manager'].includes(userRole) && deposit.status !== 'closed' && deposit.status !== 'cancelled' && (
+                              <>
+                                <button
+                                  className="btn btn-outline-secondary"
+                                  onClick={() => openEditModal(deposit)}
+                                  title="Editar"
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                  className="btn btn-outline-success"
+                                  onClick={() => handleClose(deposit._id)}
+                                  title="Cerrar"
+                                >
+                                  ✓
+                                </button>
+                                <button
+                                  className="btn btn-outline-danger"
+                                  onClick={() => handleDelete(deposit._id)}
+                                  title="Cancelar"
+                                >
+                                  🗑️
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
 
-// Main Module Router
-export default function DepositModule() {
-  return (
-    <Routes>
-      <Route path="/" element={<DepositMapView />} />
-      <Route path="/office/:officeCode" element={<OfficeDetailView />} />
-      <Route path="/items" element={<AllItemsView />} />
-    </Routes>
+      {/* Create/Edit Modal */}
+      {(showCreateModal || showEditModal) && (
+        <>
+          <div className="modal fade show d-block" tabIndex={-1}>
+            <div className="modal-dialog modal-xl">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    {showEditModal ? '✏️ Editar Depósito' : '➕ Nuevo Depósito'}
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => {
+                      setShowCreateModal(false);
+                      setShowEditModal(false);
+                      resetForm();
+                    }}
+                  ></button>
+                </div>
+                <form onSubmit={handleSubmit}>
+                  <div className="modal-body">
+                    <div className="row g-3">
+                      <div className="col-md-6">
+                        <label className="form-label">Cliente *</label>
+                        <select
+                          className="form-select"
+                          value={formData.client}
+                          onChange={(e) => setFormData({ ...formData, client: e.target.value })}
+                          required
+                        >
+                          <option value="">Seleccione cliente</option>
+                          {clients.map(client => (
+                            <option key={client._id} value={client._id}>
+                              {client.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label">Fecha de Vencimiento</label>
+                        <input
+                          type="date"
+                          className="form-control"
+                          value={formData.dueDate}
+                          onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="col-md-6">
+                        <label className="form-label">Almacén</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={formData.warehouse}
+                          onChange={(e) => setFormData({ ...formData, warehouse: e.target.value })}
+                          placeholder="Nombre del almacén"
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label">Ubicación</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={formData.location}
+                          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                          placeholder="Pasillo, estantería, etc."
+                        />
+                      </div>
+
+                      <div className="col-md-12">
+                        <label className="form-label">Notas</label>
+                        <textarea
+                          className="form-control"
+                          rows={2}
+                          value={formData.notes}
+                          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="col-12">
+                        <hr />
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                          <h6 className="mb-0">Artículos *</h6>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-primary"
+                            onClick={addItem}
+                          >
+                            ➕ Añadir Artículo
+                          </button>
+                        </div>
+
+                        {formData.items.map((item, index) => (
+                          <div key={index} className="row g-2 mb-2 border-bottom pb-2">
+                            <div className="col-md-3">
+                              <label className="form-label">Artículo</label>
+                              <select
+                                className="form-select form-select-sm"
+                                value={item.article}
+                                onChange={(e) => updateItem(index, 'article', e.target.value)}
+                                required
+                              >
+                                <option value="">Seleccione</option>
+                                {articles.map(article => (
+                                  <option key={article._id} value={article._id}>
+                                    {article.sku} - {article.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="col-md-2">
+                              <label className="form-label">Cantidad</label>
+                              <input
+                                type="number"
+                                className="form-control form-control-sm"
+                                min="0"
+                                value={item.quantity}
+                                onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value))}
+                                required
+                              />
+                            </div>
+                            <div className="col-md-1">
+                              <label className="form-label">Unidad</label>
+                              <input
+                                type="text"
+                                className="form-control form-control-sm"
+                                value={item.unit}
+                                onChange={(e) => updateItem(index, 'unit', e.target.value)}
+                              />
+                            </div>
+                            <div className="col-md-2">
+                              <label className="form-label">Lote</label>
+                              <input
+                                type="text"
+                                className="form-control form-control-sm"
+                                value={item.lotNumber || ''}
+                                onChange={(e) => updateItem(index, 'lotNumber', e.target.value)}
+                              />
+                            </div>
+                            <div className="col-md-2">
+                              <label className="form-label">Caducidad</label>
+                              <input
+                                type="date"
+                                className="form-control form-control-sm"
+                                value={item.expiryDate || ''}
+                                onChange={(e) => updateItem(index, 'expiryDate', e.target.value)}
+                              />
+                            </div>
+                            <div className="col-md-1">
+                              <label className="form-label">Notas</label>
+                              <input
+                                type="text"
+                                className="form-control form-control-sm"
+                                value={item.notes || ''}
+                                onChange={(e) => updateItem(index, 'notes', e.target.value)}
+                              />
+                            </div>
+                            <div className="col-md-1 d-flex align-items-end">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-danger w-100"
+                                onClick={() => removeItem(index)}
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+
+                        {formData.items.length === 0 && (
+                          <div className="alert alert-info mb-0">
+                            No hay artículos añadidos. Haga clic en "Añadir Artículo" para comenzar.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        setShowCreateModal(false);
+                        setShowEditModal(false);
+                        resetForm();
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                    <button type="submit" className="btn btn-primary">
+                      {showEditModal ? 'Actualizar' : 'Crear'} Depósito
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          <div className="modal-backdrop fade show"></div>
+        </>
+      )}
+
+      {/* View Modal */}
+      {showViewModal && selectedDeposit && (
+        <>
+          <div className="modal fade show d-block" tabIndex={-1}>
+            <div className="modal-dialog modal-xl">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">📦 Detalles del Depósito</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => {
+                      setShowViewModal(false);
+                      setSelectedDeposit(null);
+                    }}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <div className="row g-3">
+                    <div className="col-md-6">
+                      <strong>Código:</strong>
+                      <p>{selectedDeposit.code}</p>
+                    </div>
+                    <div className="col-md-6">
+                      <strong>Cliente:</strong>
+                      <p>{selectedDeposit.client.name}</p>
+                    </div>
+                    <div className="col-md-6">
+                      <strong>Almacén:</strong>
+                      <p>{selectedDeposit.warehouse || '-'}</p>
+                    </div>
+                    <div className="col-md-6">
+                      <strong>Ubicación:</strong>
+                      <p>{selectedDeposit.location || '-'}</p>
+                    </div>
+                    <div className="col-md-6">
+                      <strong>Fecha Recepción:</strong>
+                      <p>{new Date(selectedDeposit.receivedDate).toLocaleDateString('es-ES')}</p>
+                    </div>
+                    <div className="col-md-6">
+                      <strong>Fecha Vencimiento:</strong>
+                      <p>
+                        {selectedDeposit.dueDate ? (
+                          <>
+                            {new Date(selectedDeposit.dueDate).toLocaleDateString('es-ES')}
+                            {calculateAlertLevel(selectedDeposit) !== 'none' && (
+                              <span className={`badge bg-${alertColors[calculateAlertLevel(selectedDeposit)]} ms-2`}>
+                                {alertLabels[calculateAlertLevel(selectedDeposit)]}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          '-'
+                        )}
+                      </p>
+                    </div>
+                    <div className="col-md-6">
+                      <strong>Estado:</strong>
+                      <p>
+                        <span className={`badge bg-${statusColors[selectedDeposit.status]}`}>
+                          {statusLabels[selectedDeposit.status]}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="col-md-6">
+                      <strong>Valor Total:</strong>
+                      <p>${selectedDeposit.totalValue.toLocaleString()}</p>
+                    </div>
+
+                    {selectedDeposit.notes && (
+                      <div className="col-md-12">
+                        <strong>Notas:</strong>
+                        <p>{selectedDeposit.notes}</p>
+                      </div>
+                    )}
+
+                    <div className="col-md-12">
+                      <hr />
+                      <h6>Artículos ({selectedDeposit.items.length})</h6>
+                      <div className="table-responsive">
+                        <table className="table table-sm">
+                          <thead>
+                            <tr>
+                              <th>SKU</th>
+                              <th>Artículo</th>
+                              <th>Cantidad</th>
+                              <th>Unidad</th>
+                              <th>Lote</th>
+                              <th>Caducidad</th>
+                              <th>Notas</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {selectedDeposit.items.map((item, index) => (
+                              <tr key={index}>
+                                <td>{item.article.sku}</td>
+                                <td>{item.article.name}</td>
+                                <td><strong>{item.quantity}</strong></td>
+                                <td>{item.unit}</td>
+                                <td>{item.lotNumber || '-'}</td>
+                                <td>
+                                  {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('es-ES') : '-'}
+                                </td>
+                                <td>{item.notes || '-'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div className="col-md-12">
+                      <hr />
+                      <small className="text-muted">
+                        Creado: {new Date(selectedDeposit.createdAt).toLocaleString('es-ES')}
+                        {selectedDeposit.createdBy && ` por ${selectedDeposit.createdBy.name}`}
+                        <br />
+                        Actualizado: {new Date(selectedDeposit.updatedAt).toLocaleString('es-ES')}
+                        {selectedDeposit.updatedBy && ` por ${selectedDeposit.updatedBy.name}`}
+                      </small>
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  {['admin', 'manager'].includes(userRole) && selectedDeposit.status !== 'closed' && selectedDeposit.status !== 'cancelled' && (
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => {
+                        setShowViewModal(false);
+                        openEditModal(selectedDeposit);
+                      }}
+                    >
+                      Editar
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setShowViewModal(false);
+                      setSelectedDeposit(null);
+                    }}
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="modal-backdrop fade show"></div>
+        </>
+      )}
+    </div>
   );
 }

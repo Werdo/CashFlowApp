@@ -9,5 +9,7 @@ module.exports = {
   DeliveryNote: require('./DeliveryNote'),
   Forecast: require('./Forecast'),
   Settings: require('./Settings'),
-  AuditLog: require('./AuditLog')
+  AuditLog: require('./AuditLog'),
+  Deposit: require('./Deposit'),
+  Invoice: require('./Invoice')
 };

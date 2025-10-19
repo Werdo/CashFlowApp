@@ -1,4 +1,6 @@
 const { Settings } = require('../models');
+const path = require('path');
+const fs = require('fs');
 
 async function getSettings(req, res, next) {
   try {
@@ -98,11 +100,144 @@ async function updateIntegrations(req, res, next) {
   }
 }
 
+async function uploadLogo(req, res, next) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded',
+        error: {
+          code: 'NO_FILE',
+          details: 'Please select a logo file to upload'
+        }
+      });
+    }
+
+    // Get global settings
+    let settings = await Settings.getGlobalSettings();
+
+    // Delete old logo file if exists
+    if (settings.companySettings?.logo?.url) {
+      const oldLogoPath = path.join(__dirname, '../../uploads/logos', path.basename(settings.companySettings.logo.url));
+      if (fs.existsSync(oldLogoPath)) {
+        fs.unlinkSync(oldLogoPath);
+      }
+    }
+
+    // Save new logo URL
+    const logoUrl = `/uploads/logos/${req.file.filename}`;
+
+    if (!settings.companySettings) {
+      settings.companySettings = {};
+    }
+
+    if (!settings.companySettings.logo) {
+      settings.companySettings.logo = {};
+    }
+
+    settings.companySettings.logo.url = logoUrl;
+    settings.updatedBy = req.userId;
+    await settings.save();
+
+    res.json({
+      success: true,
+      message: 'Logo uploaded successfully',
+      data: {
+        logoUrl: logoUrl,
+        filename: req.file.filename,
+        size: req.file.size,
+        mimetype: req.file.mimetype
+      }
+    });
+  } catch (error) {
+    // Clean up uploaded file on error
+    if (req.file) {
+      const filePath = path.join(__dirname, '../../uploads/logos', req.file.filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+    next(error);
+  }
+}
+
+async function deleteLogo(req, res, next) {
+  try {
+    let settings = await Settings.getGlobalSettings();
+
+    if (!settings.companySettings?.logo?.url) {
+      return res.status(404).json({
+        success: false,
+        message: 'No logo found',
+        error: {
+          code: 'NO_LOGO',
+          details: 'There is no logo to delete'
+        }
+      });
+    }
+
+    // Delete logo file
+    const logoPath = path.join(__dirname, '../../uploads/logos', path.basename(settings.companySettings.logo.url));
+    if (fs.existsSync(logoPath)) {
+      fs.unlinkSync(logoPath);
+    }
+
+    // Remove from settings
+    settings.companySettings.logo.url = null;
+    settings.updatedBy = req.userId;
+    await settings.save();
+
+    res.json({
+      success: true,
+      message: 'Logo deleted successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getLogo(req, res, next) {
+  try {
+    const settings = await Settings.getGlobalSettings();
+
+    if (!settings.companySettings?.logo?.url) {
+      return res.status(404).json({
+        success: false,
+        message: 'No logo found',
+        error: {
+          code: 'NO_LOGO',
+          details: 'No logo has been uploaded yet'
+        }
+      });
+    }
+
+    const logoPath = path.join(__dirname, '../../uploads/logos', path.basename(settings.companySettings.logo.url));
+
+    if (!fs.existsSync(logoPath)) {
+      return res.status(404).json({
+        success: false,
+        message: 'Logo file not found',
+        error: {
+          code: 'FILE_NOT_FOUND',
+          details: 'The logo file is missing from the server'
+        }
+      });
+    }
+
+    res.sendFile(logoPath);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getSettings,
   updateSettings,
   updateTheme,
   updateCompany,
   updateSystem,
-  updateIntegrations
+  updateIntegrations,
+  uploadLogo,
+  deleteLogo,
+  getLogo
 };

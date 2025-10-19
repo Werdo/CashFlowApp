@@ -106,6 +106,18 @@ const clientSchema = new mongoose.Schema({
   },
   notes: String,
 
+  // Visual identification
+  color: {
+    type: String,
+    default: '#3B82F6', // Blue-500 as default
+    validate: {
+      validator: function(v) {
+        return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(v);
+      },
+      message: props => `${props.value} is not a valid hex color!`
+    }
+  },
+
   // Campos de auditoría
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,

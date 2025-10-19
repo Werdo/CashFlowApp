@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const routes = require('./routes');
@@ -14,6 +15,9 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://mongodb:27017/assetflo
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files (uploads)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Request logging in development
 if (process.env.NODE_ENV !== 'production') {
@@ -38,7 +42,11 @@ app.get('/', (req, res) => {
       clients: '/api/clients',
       articles: '/api/articles',
       stock: '/api/stock',
-      settings: '/api/settings'
+      settings: '/api/settings',
+      deliveryNotes: '/api/delivery-notes',
+      deposits: '/api/deposits',
+      invoices: '/api/invoices',
+      reports: '/api/reports'
     }
   });
 });

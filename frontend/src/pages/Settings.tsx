@@ -139,7 +139,12 @@ const Settings: React.FC = () => {
       if (response.data.success) {
         const settings = response.data.data.settings;
         if (settings.companySettings) {
-          setCompanySettings(settings.companySettings);
+          // Map logo.url to logo for UI compatibility
+          const company = {
+            ...settings.companySettings,
+            logo: settings.companySettings.logo?.url || settings.companySettings.logo
+          };
+          setCompanySettings(company);
         }
         if (settings.systemSettings) {
           setSystemSettings(settings.systemSettings);
@@ -347,7 +352,7 @@ const Settings: React.FC = () => {
     formData.append('logo', file);
 
     try {
-      const response = await axios.post('/api/settings/company/logo', formData, {
+      const response = await axios.post('/api/settings/logo', formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -360,9 +365,11 @@ const Settings: React.FC = () => {
           logo: response.data.data.logoUrl
         });
         toast.success('Logo subido exitosamente');
+        loadSettings(); // Reload settings to get the updated logo URL
       }
-    } catch (error) {
-      toast.error('Error al subir logo');
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.message || 'Error al subir logo';
+      toast.error(errorMsg);
     }
   };
 
