@@ -103,6 +103,7 @@ async function optionalAuth(req, res, next) {
 
 module.exports = {
   authenticate,
+  protect: authenticate, // Alias for authenticate
   authorize,
   optionalAuth
 };
