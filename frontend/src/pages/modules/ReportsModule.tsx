@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { getApiUrl } from '../../config/api';
 
 // ============================================================================
 // INTERFACES
@@ -47,27 +48,27 @@ export default function ReportsModule() {
       let response;
       switch (reportType) {
         case 'dashboard':
-          response = await axios.get('/api/reports/dashboard', { headers });
+          response = await axios.get(getApiUrl('/api/reports/dashboard'), { headers });
           setReportData({ dashboard: response.data.data });
           break;
         case 'inventory':
-          response = await axios.get('/api/reports/inventory', { headers, params });
+          response = await axios.get(getApiUrl('/api/reports/inventory'), { headers, params });
           setReportData({ inventory: response.data.data });
           break;
         case 'movements':
-          response = await axios.get('/api/reports/movements', { headers, params });
+          response = await axios.get(getApiUrl('/api/reports/movements'), { headers, params });
           setReportData({ movements: response.data.data });
           break;
         case 'deposits':
-          response = await axios.get('/api/reports/deposits', { headers, params });
+          response = await axios.get(getApiUrl('/api/reports/deposits'), { headers, params });
           setReportData({ deposits: response.data.data });
           break;
         case 'financial':
-          response = await axios.get('/api/reports/financial', { headers, params });
+          response = await axios.get(getApiUrl('/api/reports/financial'), { headers, params });
           setReportData({ financial: response.data.data });
           break;
         case 'clients':
-          response = await axios.get('/api/reports/clients', { headers });
+          response = await axios.get(getApiUrl('/api/reports/clients'), { headers });
           setReportData({ clients: response.data.data });
           break;
       }

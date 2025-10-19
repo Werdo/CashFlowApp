@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import QRCodeGenerator from '../../components/QRCodeGenerator';
+import { getApiUrl } from '../../config/api';
 
 interface Family {
   _id: string;
@@ -111,11 +112,11 @@ export default function AssetsModule() {
     try {
       setLoading(true);
       const [articlesRes, familiesRes] = await Promise.all([
-        axios.get('/api/articles', {
+        axios.get(getApiUrl('/api/articles'), {
           headers: { Authorization: `Bearer ${token}` },
           params: { active: filterActive !== 'all' ? filterActive : undefined }
         }),
-        axios.get('/api/articles/families', {
+        axios.get(getApiUrl('/api/articles/families'), {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -234,7 +235,7 @@ export default function AssetsModule() {
 
       if (editingArticle) {
         const response = await axios.put(
-          `/api/articles/${editingArticle._id}`,
+          getApiUrl(`/api/articles/${editingArticle._id}`),
           payload,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -246,7 +247,7 @@ export default function AssetsModule() {
         }
       } else {
         const response = await axios.post(
-          '/api/articles',
+          getApiUrl('/api/articles'),
           payload,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -269,7 +270,7 @@ export default function AssetsModule() {
     }
 
     try {
-      const response = await axios.delete(`/api/articles/${articleId}`, {
+      const response = await axios.delete(getApiUrl(`/api/articles/${articleId}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
 

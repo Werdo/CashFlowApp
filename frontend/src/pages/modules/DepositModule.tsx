@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { getApiUrl } from '../../config/api';
 
 interface DepositItem {
   _id?: string;
@@ -143,19 +144,19 @@ export default function DepositModule() {
       if (searchTerm) params.search = searchTerm;
 
       const [depositsRes, clientsRes, articlesRes, statsRes] = await Promise.all([
-        axios.get('/api/deposits', {
+        axios.get(getApiUrl('/api/deposits'), {
           headers: { Authorization: `Bearer ${token}` },
           params
         }),
-        axios.get('/api/clients', {
+        axios.get(getApiUrl('/api/clients'), {
           headers: { Authorization: `Bearer ${token}` },
           params: { active: true }
         }),
-        axios.get('/api/articles', {
+        axios.get(getApiUrl('/api/articles'), {
           headers: { Authorization: `Bearer ${token}` },
           params: { active: true }
         }),
-        axios.get('/api/deposits/stats', {
+        axios.get(getApiUrl('/api/deposits/stats'), {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -195,12 +196,12 @@ export default function DepositModule() {
       };
 
       if (showEditModal && selectedDeposit) {
-        await axios.put(`/api/deposits/${selectedDeposit._id}`, payload, {
+        await axios.put(getApiUrl(`/api/deposits/${selectedDeposit._id}`), payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success('Depósito actualizado exitosamente');
       } else {
-        await axios.post('/api/deposits', payload, {
+        await axios.post(getApiUrl('/api/deposits'), payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success('Depósito creado exitosamente');
@@ -222,7 +223,7 @@ export default function DepositModule() {
     }
 
     try {
-      await axios.delete(`/api/deposits/${depositId}`, {
+      await axios.delete(getApiUrl(`/api/deposits/${depositId}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success('Depósito cancelado exitosamente');
@@ -245,7 +246,7 @@ export default function DepositModule() {
     }
 
     try {
-      await axios.post(`/api/deposits/${depositId}/close`, {}, {
+      await axios.post(getApiUrl(`/api/deposits/${depositId}/close`), {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success('Depósito cerrado exitosamente');

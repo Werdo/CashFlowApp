@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { getApiUrl } from '../../config/api';
 
 interface DeliveryItem {
   _id?: string;
@@ -168,22 +169,22 @@ export default function MovementsModule() {
       if (searchTerm) params.search = searchTerm;
 
       const [notesRes, clientsRes, articlesRes, lotsRes, statsRes] = await Promise.all([
-        axios.get('/api/delivery-notes', {
+        axios.get(getApiUrl('/api/delivery-notes'), {
           headers: { Authorization: `Bearer ${token}` },
           params
         }),
-        axios.get('/api/clients', {
+        axios.get(getApiUrl('/api/clients'), {
           headers: { Authorization: `Bearer ${token}` },
           params: { active: true }
         }),
-        axios.get('/api/articles', {
+        axios.get(getApiUrl('/api/articles'), {
           headers: { Authorization: `Bearer ${token}` },
           params: { active: true }
         }),
-        axios.get('/api/stock/lots', {
+        axios.get(getApiUrl('/api/stock/lots'), {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get('/api/delivery-notes/stats', {
+        axios.get(getApiUrl('/api/delivery-notes/stats'), {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -221,12 +222,12 @@ export default function MovementsModule() {
       };
 
       if (showEditModal && selectedNote) {
-        await axios.put(`/api/delivery-notes/${selectedNote._id}`, payload, {
+        await axios.put(getApiUrl(`/api/delivery-notes/${selectedNote._id}`), payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success('Albarán actualizado exitosamente');
       } else {
-        await axios.post('/api/delivery-notes', payload, {
+        await axios.post(getApiUrl('/api/delivery-notes'), payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success('Albarán creado exitosamente');
@@ -248,7 +249,7 @@ export default function MovementsModule() {
     }
 
     try {
-      await axios.delete(`/api/delivery-notes/${noteId}`, {
+      await axios.delete(getApiUrl(`/api/delivery-notes/${noteId}`), {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success('Albarán cancelado exitosamente');
@@ -269,7 +270,7 @@ export default function MovementsModule() {
     }
 
     try {
-      await axios.post(`/api/delivery-notes/${noteId}/complete`, {}, {
+      await axios.post(getApiUrl(`/api/delivery-notes/${noteId}/complete`), {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success('Albarán completado exitosamente');

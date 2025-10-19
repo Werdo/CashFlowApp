@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { getApiUrl } from '../../config/api';
 
 // ============================================================================
 // INTERFACES
@@ -143,9 +144,9 @@ export default function InvoicingModule() {
       if (filterClient !== 'all') params.clientId = filterClient;
 
       const [invoicesRes, clientsRes, statsRes] = await Promise.all([
-        axios.get('/api/invoices', { headers, params }),
-        axios.get('/api/clients', { headers }),
-        axios.get('/api/invoices/stats', { headers })
+        axios.get(getApiUrl('/api/invoices'), { headers, params }),
+        axios.get(getApiUrl('/api/clients'), { headers }),
+        axios.get(getApiUrl('/api/invoices/stats'), { headers })
       ]);
 
       setInvoices(invoicesRes.data.data || []);
@@ -353,10 +354,10 @@ export default function InvoicingModule() {
       const headers = { Authorization: `Bearer ${token}` };
 
       if (modalMode === 'create') {
-        await axios.post('/api/invoices', formData, { headers });
+        await axios.post(getApiUrl('/api/invoices'), formData, { headers });
         toast.success('Factura creada exitosamente');
       } else if (modalMode === 'edit') {
-        await axios.put(`/api/invoices/${selectedInvoice?._id}`, formData, { headers });
+        await axios.put(getApiUrl(`/api/invoices/${selectedInvoice?._id}`), formData, { headers });
         toast.success('Factura actualizada exitosamente');
       }
 
@@ -382,7 +383,7 @@ export default function InvoicingModule() {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      await axios.delete(`/api/invoices/${invoiceId}`, { headers });
+      await axios.delete(getApiUrl(`/api/invoices/${invoiceId}`), { headers });
       toast.success('Factura cancelada exitosamente');
       loadData();
     } catch (error: any) {
@@ -409,7 +410,7 @@ export default function InvoicingModule() {
         paymentReference: ''
       };
 
-      await axios.post(`/api/invoices/${invoiceId}/mark-paid`, paymentData, { headers });
+      await axios.post(getApiUrl(`/api/invoices/${invoiceId}/mark-paid`), paymentData, { headers });
       toast.success('Factura marcada como pagada');
       loadData();
     } catch (error: any) {
@@ -423,7 +424,7 @@ export default function InvoicingModule() {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      await axios.post(`/api/invoices/${invoiceId}/send`, { emails: [] }, { headers });
+      await axios.post(getApiUrl(`/api/invoices/${invoiceId}/send`), { emails: [] }, { headers });
       toast.success('Factura enviada exitosamente');
       loadData();
     } catch (error: any) {
