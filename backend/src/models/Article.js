@@ -77,7 +77,19 @@ const articleSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  notes: String
+  notes: String,
+
+  // Campos de auditoría
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  }
 }, {
   timestamps: true
 });

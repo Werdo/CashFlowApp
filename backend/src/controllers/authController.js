@@ -1,4 +1,4 @@
-const { User } = require('../models');
+const { User, AuditLog } = require('../models');
 const { generateToken } = require('../utils/jwt');
 
 /**
@@ -97,6 +97,24 @@ async function login(req, res, next) {
     const ip = req.ip || req.connection.remoteAddress;
     const userAgent = req.headers['user-agent'];
     await user.recordLogin(ip, userAgent);
+
+    // Log login in audit trail
+    await AuditLog.log({
+      userId: user._id,
+      userName: user.name,
+      userEmail: user.email,
+      action: 'login',
+      entity: 'user',
+      entityId: user._id,
+      entityName: user.name,
+      metadata: {
+        ip,
+        userAgent,
+        method: req.method,
+        url: req.originalUrl,
+        statusCode: 200
+      }
+    });
 
     // Generate token
     const token = generateToken(user);
@@ -212,6 +230,26 @@ async function changePassword(req, res, next) {
     // Update password
     user.password = newPassword;
     await user.save();
+
+    // Log password change in audit trail
+    const ip = req.ip || req.connection.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+    await AuditLog.log({
+      userId: user._id,
+      userName: user.name,
+      userEmail: user.email,
+      action: 'password_reset',
+      entity: 'user',
+      entityId: user._id,
+      entityName: user.name,
+      metadata: {
+        ip,
+        userAgent,
+        method: req.method,
+        url: req.originalUrl,
+        statusCode: 200
+      }
+    });
 
     res.json({
       success: true,

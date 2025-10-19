@@ -39,7 +39,19 @@ const userSchema = new mongoose.Schema({
     timestamp: Date,
     ip: String,
     userAgent: String
-  }]
+  }],
+
+  // Campos de auditoría
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false // No required para el primer usuario
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  }
 }, {
   timestamps: true
 });

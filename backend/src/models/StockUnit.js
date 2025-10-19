@@ -93,7 +93,19 @@ const stockUnitSchema = new mongoose.Schema({
     batchInfo: mongoose.Schema.Types.Mixed,
     customFields: mongoose.Schema.Types.Mixed
   },
-  notes: String
+  notes: String,
+
+  // Campos de auditoría
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  }
 }, {
   timestamps: true
 });

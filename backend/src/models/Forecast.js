@@ -50,7 +50,14 @@ const forecastSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  notes: String
+  notes: String,
+
+  // Campo de auditoría adicional
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  }
 }, {
   timestamps: true
 });

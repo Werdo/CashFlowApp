@@ -253,9 +253,17 @@ const settingsSchema = new mongoose.Schema({
       }
     }
   },
+
+  // Campos de auditoría
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  },
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    required: false
   }
 }, {
   timestamps: true

@@ -46,7 +46,19 @@ const lotSchema = new mongoose.Schema({
     certifications: [String],
     customsDocuments: [String]
   },
-  notes: String
+  notes: String,
+
+  // Campos de auditoría
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  }
 }, {
   timestamps: true
 });

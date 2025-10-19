@@ -8,5 +8,6 @@ module.exports = {
   StockUnit: require('./StockUnit'),
   DeliveryNote: require('./DeliveryNote'),
   Forecast: require('./Forecast'),
-  Settings: require('./Settings')
+  Settings: require('./Settings'),
+  AuditLog: require('./AuditLog')
 };
