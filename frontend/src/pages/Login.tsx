@@ -1,12 +1,14 @@
 import { useState, FormEvent } from 'react';
+import axios from 'axios';
+import { getApiUrl } from '../config/api';
 
 interface LoginProps {
   onLogin: (userData: any) => void;
 }
 
 export default function Login({ onLogin }: LoginProps) {
-  const [email, setEmail] = useState('demo@assetflow.com');
-  const [password, setPassword] = useState('demo123');
+  const [email, setEmail] = useState('gvarela@oversunenergy.com');
+  const [password, setPassword] = useState('OverSun2025!');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -15,20 +17,39 @@ export default function Login({ onLogin }: LoginProps) {
     setLoading(true);
     setError('');
 
-    // Simular login (en producción esto llamaría a /api/auth/login)
-    setTimeout(() => {
-      if (email && password) {
+    try {
+      // Call real backend API
+      const response = await axios.post(getApiUrl('/api/auth/login'), {
+        email,
+        password
+      });
+
+      if (response.data.success) {
+        const { token, user } = response.data.data;
+
+        // Store token and user data in localStorage
+        localStorage.setItem('token', token);
+        localStorage.setItem('userId', user._id);
+        localStorage.setItem('userName', user.name);
+        localStorage.setItem('userEmail', user.email);
+        localStorage.setItem('userRole', user.role);
+
+        // Call onLogin with user data
         onLogin({
-          id: '1',
-          name: 'Usuario Demo',
-          email: email,
-          role: 'admin'
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role
         });
       } else {
-        setError('Email y contraseña son requeridos');
+        setError(response.data.message || 'Error al iniciar sesión');
       }
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err.response?.data?.message || 'Error al conectar con el servidor');
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (
@@ -109,7 +130,7 @@ export default function Login({ onLogin }: LoginProps) {
 
                 <div className="text-center mt-4">
                   <small className="text-muted">
-                    Demo: demo@assetflow.com / demo123
+                    Usuarios disponibles en base de datos
                   </small>
                 </div>
 
